@@ -19,6 +19,7 @@ export default function AdminDashboard() {
   const [requests, setRequests] = useState([]);
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState({});
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [reviewModal, setReviewModal] = useState(null);
@@ -27,14 +28,16 @@ export default function AdminDashboard() {
 
   const loadDashboard = useCallback(async () => {
     try {
-      const [requestData, statsData, userData] = await Promise.all([
+      const [requestData, statsData, userData, reviewData] = await Promise.all([
         adminService.getTutorRequests(),
         adminService.getDashboardStats(),
         adminService.getUsers(),
+        adminService.getReviews(),
       ]);
       setRequests(Array.isArray(requestData) ? requestData : []);
       setStats(statsData || {});
       setUsers(Array.isArray(userData) ? userData : []);
+      setReviews(Array.isArray(reviewData) ? reviewData : []);
     } catch (error) {
       Alert.alert("Admin Dashboard", error?.response?.data?.message || "Could not load admin dashboard.");
     } finally {
@@ -106,6 +109,28 @@ export default function AdminDashboard() {
     } finally {
       setProcessingReview(false);
     }
+  };
+
+  const removeStudentReview = async (review) => {
+    Alert.alert(
+      "Remove Review",
+      "Remove this review as inappropriate?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await adminService.removeReview(review.id);
+              loadDashboard();
+            } catch (error) {
+              Alert.alert("Reviews", error?.response?.data?.message || "Could not remove review.");
+            }
+          },
+        },
+      ],
+    );
   };
 
   const confirmTutorAction = (request, action) => {
@@ -210,6 +235,25 @@ export default function AdminDashboard() {
         <ListRow icon="people-outline" title="Parents" subtitle="Registered parent accounts" meta={parents.length} />
         <ListRow icon="school-outline" title="Students" subtitle="Registered student accounts" meta={students.length} />
         <ListRow icon="briefcase-outline" title="Tutors" subtitle="All tutor accounts" meta={tutors.length} />
+      </SectionCard>
+
+      <SectionCard title="Reviews & Ratings" eyebrow="Tutor Performance" icon="star-outline">
+        {reviews.length ? (
+          reviews.flatMap((group) =>
+            group.reviews.map((review) => (
+              <ListRow
+                key={review.id}
+                icon="star-outline"
+                title={`${group.tutorName} · ${review.rating}/5`}
+                subtitle={`${review.student?.user?.fullName || "Student"}: ${review.text}`}
+                meta={new Date(review.createdAt).toLocaleDateString("en-IN")}
+                onPress={() => removeStudentReview(review)}
+              />
+            )),
+          )
+        ) : (
+          <EmptyState label="No tutor reviews have been submitted." />
+        )}
       </SectionCard>
 
       <SectionCard title="Tutor Applications Overview" eyebrow="All Requests" icon="calendar-outline">

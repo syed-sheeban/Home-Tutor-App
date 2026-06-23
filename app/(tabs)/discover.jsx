@@ -368,6 +368,39 @@ function TutorCard({ tutor, index, isBookingOpen, bookingForm, setBookingForm, o
           )}
         </View>
 
+        <View style={styles.availabilityCard}>
+          <View style={styles.availabilityTop}>
+            <Ionicons
+              name={tutor.availableToday ? "checkmark-circle" : "time-outline"}
+              size={16}
+              color={tutor.availableToday ? "#0f766e" : "#92400e"}
+            />
+            <Text style={styles.availabilityTitle}>
+              {tutor.availableToday ? "Available today" : tutor.availabilityStatus || "Availability pending"}
+            </Text>
+          </View>
+          <Text style={styles.availabilityText}>
+            {tutor.availableDays?.length ? tutor.availableDays.join(", ") : "Days not configured"}
+          </Text>
+          <Text style={styles.availabilityText}>
+            {tutor.availableTimeSlots?.[0]?.startTime
+              ? `${tutor.availableTimeSlots[0].startTime}-${tutor.availableTimeSlots[0].endTime}`
+              : "Time on request"} · {tutor.teachingMode || "BOTH"} · {tutor.teachingRadius || 0} km
+          </Text>
+        </View>
+
+        {tutor.recentReview && (
+          <View style={styles.reviewPreview}>
+            <Ionicons name="chatbubble-ellipses-outline" size={15} color="#0f766e" />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.reviewPreviewText} numberOfLines={3}>
+                “{tutor.recentReview.text}”
+              </Text>
+              <Text style={styles.reviewPreviewBy}>— {tutor.recentReview.studentName}</Text>
+            </View>
+          </View>
+        )}
+
         {/* Subjects */}
         {subjectList.length > 0 && (
           <View style={styles.subjectRow}>
@@ -728,6 +761,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   metaText: { flex: 1, color: "#334155", fontSize: 14, lineHeight: 19, fontWeight: "800" },
+  availabilityCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#99f6e4",
+    backgroundColor: "#f0fdfa",
+    padding: 12,
+    gap: 5,
+  },
+  availabilityTop: { flexDirection: "row", alignItems: "center", gap: 7 },
+  availabilityTitle: { color: "#0f766e", fontSize: 13, fontWeight: "900" },
+  availabilityText: { color: "#475569", fontSize: 12, lineHeight: 17, fontWeight: "700" },
+  reviewPreview: {
+    flexDirection: "row",
+    gap: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: "#14b8a6",
+    paddingLeft: 10,
+  },
+  reviewPreviewText: { color: "#475569", fontSize: 12, lineHeight: 18, fontStyle: "italic" },
+  reviewPreviewBy: { color: "#0f766e", fontSize: 11, fontWeight: "900", marginTop: 3 },
 
   subjectRow: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
   subjectTag: {

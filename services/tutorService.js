@@ -68,6 +68,16 @@ export const tutorService = {
     const response = await api.put(`/tutor-dashboard/booking/${bookingId}`, { status });
     return response.data;
   },
+
+  proposeSchedule: async (bookingId, schedule) => {
+    const response = await api.post(`/tutor-dashboard/booking/${bookingId}/schedule`, schedule);
+    return response.data;
+  },
+
+  updateAvailability: async (availability) => {
+    const response = await api.put("/tutor-dashboard/availability", availability);
+    return response.data;
+  },
 };
 
 export default tutorService;

@@ -125,8 +125,8 @@ export default function ParentDashboard() {
               key={tutor.id}
               icon="person-outline"
               title={tutor.name || "Tutor"}
-              subtitle={`${tutor.subject || "Subject"} ${tutor.location ? `• ${tutor.location}` : ""}`}
-              meta={tutor.rating ? `${tutor.rating}/5` : "New"}
+              subtitle={`${tutor.subject || "Subject"} · ${tutor.availableDays?.join(", ") || "Availability pending"} · ${tutor.teachingMode || "BOTH"}`}
+              meta={tutor.rating ? `${tutor.rating}/5 (${tutor.reviews || 0})` : "New"}
             />
           ))
         ) : (

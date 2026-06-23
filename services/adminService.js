@@ -26,6 +26,16 @@ export const adminService = {
     const response = await api.get(`/admin/tutor-documents/${tutorId}/${mode}`);
     return response.data;
   },
+
+  getReviews: async () => {
+    const response = await api.get("/admin/reviews");
+    return response.data;
+  },
+
+  removeReview: async (reviewId) => {
+    const response = await api.delete(`/admin/reviews/${reviewId}`);
+    return response.data;
+  },
 };
 
 export default adminService;
