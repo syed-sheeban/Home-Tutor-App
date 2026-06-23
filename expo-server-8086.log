@@ -1,0 +1,19 @@
+
+> home-tutor-apk@1.0.0 web
+> expo start --web --port 8086
+
+Starting project at A:\Home-tutor-apk
+React Compiler enabled
+Starting Metro Bundler
+Waiting on http://localhost:8086
+Logs for your project will appear below.
+Web node_modules\expo-router\entry.js ▓▓▓▓▓░░░░░░░░░░░ 32.9% (229/399)
+λ node_modules\expo-router\node\render.js ▓▓▓▓▓▓▓░░░░░░░░░ 45.1% (342/509)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 72.8% (843/988)
+λ node_modules\expo-router\node\render.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 76.3% ( 963/1119)
+λ Bundled 8547ms node_modules\expo-router\node\render.js (1464 modules)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (1378/1378)
+Web Bundled 15758ms node_modules\expo-router\entry.js (1378 modules)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (1378/1378)
+Web Bundled 1908ms node_modules\expo-router\entry.js (1379 modules)
+ LOG  [web] Logs will appear in the browser console

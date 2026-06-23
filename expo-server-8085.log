@@ -1,0 +1,7 @@
+
+> home-tutor-apk@1.0.0 web
+> expo start --web --port 8085
+
+Starting project at A:\Home-tutor-apk
+› Port 8085 is being used by another process
+› Skipping dev server
