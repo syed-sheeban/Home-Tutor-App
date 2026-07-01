@@ -56,6 +56,7 @@ function RouteController() {
       <Stack.Screen name="(parent)" options={{ headerShown: false }} />
       <Stack.Screen name="(tutor)" options={{ headerShown: false }} />
       <Stack.Screen name="(admin)" options={{ headerShown: false }} />
+      <Stack.Screen name="notifications" options={{ headerShown: false }} />
     </Stack>
   );
 }

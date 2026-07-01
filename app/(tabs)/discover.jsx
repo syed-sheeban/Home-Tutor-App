@@ -16,6 +16,7 @@ import { router } from "expo-router";
 import { getNearbyTutors, getTutors, requestLesson } from "../../services/api";
 import useAuthStore from "../../store/authStore";
 import LocationMapPicker from "../../components/location-map-picker";
+import { NotificationBell } from "../../components/notification-bell";
 
 // Screen width not used for layout spacing
 
@@ -121,14 +122,17 @@ export default function DiscoverScreen() {
             {loading ? "Loading..." : `${filtered.length} verified tutor${filtered.length !== 1 ? "s" : ""} available`}
           </Text>
         </View>
-        <TouchableOpacity
-          style={styles.headerLoginBtn}
-          onPress={() => router.push(isAuthenticated ? null : "/(auth)/login")}
-          activeOpacity={0.85}
-        >
-          <Ionicons name={isAuthenticated ? "person" : "log-in-outline"} size={16} color="#fff" />
-          <Text style={styles.headerLoginText}>{isAuthenticated ? "Account" : "Sign In"}</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          {isAuthenticated && <NotificationBell compact />}
+          <TouchableOpacity
+            style={styles.headerLoginBtn}
+            onPress={() => router.push(isAuthenticated ? "/(tabs)/profile" : "/(auth)/login")}
+            activeOpacity={0.85}
+          >
+            <Ionicons name={isAuthenticated ? "person" : "log-in-outline"} size={16} color="#fff" />
+            <Text style={styles.headerLoginText}>{isAuthenticated ? "Account" : "Sign In"}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* ── Search bar ── */}
@@ -517,6 +521,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   headerSub: { color: SLATE500, fontSize: 13, marginTop: 3 },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   headerLoginBtn: {
     flexDirection: "row",
     alignItems: "center",

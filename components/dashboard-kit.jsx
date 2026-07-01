@@ -2,6 +2,7 @@ import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } fr
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInUp } from "react-native-reanimated";
+import { NotificationBell } from "./notification-bell";
 
 const C = {
   bg: "#050810",
@@ -40,11 +41,14 @@ export function DashboardShell({ title, subtitle, icon, children, refreshing, on
             <Text style={styles.brandRole}>{title}</Text>
           </View>
         </View>
-        {!!onLogout && (
-          <TouchableOpacity style={styles.logoutButton} onPress={onLogout} activeOpacity={0.82}>
-            <Ionicons name="log-out-outline" size={19} color={C.white70} />
-          </TouchableOpacity>
-        )}
+        <View style={styles.brandActions}>
+          <NotificationBell compact />
+          {!!onLogout && (
+            <TouchableOpacity style={styles.logoutButton} onPress={onLogout} activeOpacity={0.82}>
+              <Ionicons name="log-out-outline" size={19} color={C.white70} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <FlatList
@@ -216,6 +220,7 @@ const styles = StyleSheet.create({
   brandCopy: { flex: 1 },
   brandName: { color: C.white, fontSize: 17, fontWeight: "900" },
   brandRole: { color: C.white50, fontSize: 11, fontWeight: "800", marginTop: 1 },
+  brandActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   logoutButton: {
     width: 38,
     height: 38,

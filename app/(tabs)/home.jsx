@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import useAuthStore from "../../store/authStore";
+import { NotificationBell } from "../../components/notification-bell";
 
 const { width: SW, height: SH } = Dimensions.get("window");
 const HERO_HEIGHT = Math.max(720, SH * 0.95);
@@ -211,6 +212,7 @@ export default function HomeScreen() {
                   <Text style={styles.siteNavActionText}>Login / Signup</Text>
                 </TouchableOpacity>
               )}
+              {isAuthenticated && <NotificationBell compact />}
 
               <TouchableOpacity
                 style={[styles.siteNavToggle, isMenuOpen && styles.siteNavToggleOpen]}

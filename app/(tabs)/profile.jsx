@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from "../../constants/Colors";
 import useAuthStore from "../../store/authStore";
 import { tutorService } from "../../services/tutorService";
+import { NotificationBell } from "../../components/notification-bell";
 
 const dashboardRoutes = {
   STUDENT: "/(student)",
@@ -121,8 +122,13 @@ export default function ProfileScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
-        <Text style={styles.headerSub}>Account access and dashboard controls.</Text>
+        <View style={styles.headerTop}>
+          <View style={styles.headerCopy}>
+            <Text style={styles.headerTitle}>Profile</Text>
+            <Text style={styles.headerSub}>Account access and dashboard controls.</Text>
+          </View>
+          {isAuthenticated && <NotificationBell compact />}
+        </View>
       </View>
 
       {isAuthenticated ? (
@@ -305,6 +311,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   header: { marginBottom: 20 },
+  headerTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  headerCopy: { flex: 1 },
   headerTitle: { color: Colors.text, fontSize: 28, fontWeight: "900" },
   headerSub: { color: Colors.textSecondary, fontSize: 14, marginTop: 4 },
   sectionGap: { gap: 14 },
