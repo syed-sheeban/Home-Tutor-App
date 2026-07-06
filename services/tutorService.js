@@ -74,6 +74,11 @@ export const tutorService = {
     return response.data;
   },
 
+  sendProgressUpdate: async (payload) => {
+    const response = await api.post("/tutor-dashboard/progress", payload);
+    return response.data;
+  },
+
   updateAvailability: async (availability) => {
     const response = await api.put("/tutor-dashboard/availability", availability);
     return response.data;

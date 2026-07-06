@@ -14,6 +14,7 @@
     "android": {
       "package": "com.hometutor.apk",
       "versionCode": 2,
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -47,6 +48,8 @@
       "reactCompiler": true
     },
     "extra": {
+      "apiBaseUrl": "http://192.168.1.22:5000/api",
+      "webAppBaseUrl": "http://192.168.1.22:5173",
       "router": {},
       "eas": {
         "projectId": "d04f457e-4aa9-4fe5-93cf-30624a9134b8"

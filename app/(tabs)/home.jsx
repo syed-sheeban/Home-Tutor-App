@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -133,20 +133,20 @@ export default function HomeScreen() {
     results: HERO_HEIGHT + 1380,
   };
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      changeSlide((currentSlide + 1) % slides.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, [currentSlide]);
-
-  const changeSlide = (next) => {
+  const changeSlide = useCallback((next) => {
     Animated.sequence([
       Animated.timing(fadeAnim, { toValue: 0, duration: 180, useNativeDriver: true }),
       Animated.timing(fadeAnim, { toValue: 1, duration: 260, useNativeDriver: true }),
     ]).start();
     setCurrentSlide(next);
-  };
+  }, [fadeAnim]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      changeSlide((currentSlide + 1) % slides.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [changeSlide, currentSlide]);
 
   const prevSlide = () => changeSlide(currentSlide === 0 ? slides.length - 1 : currentSlide - 1);
   const nextSlide = () => changeSlide(currentSlide === slides.length - 1 ? 0 : currentSlide + 1);
@@ -234,10 +234,14 @@ export default function HomeScreen() {
                   activeOpacity={0.82}
                 >
                   <View style={[styles.mobileNavIcon, item.highlight && styles.mobileNavIconHighlight, item.danger && styles.mobileNavIconLogout]}>
-                    <Ionicons name={item.icon} size={18} color={item.highlight ? "#020617" : "rgba(255,255,255,0.82)"} />
+                    <Ionicons
+                      name={item.icon}
+                      size={18}
+                      color={item.highlight && !item.danger ? "#fff" : item.highlight ? "#020617" : "rgba(255,255,255,0.82)"}
+                    />
                   </View>
-                  <Text style={[styles.mobileNavLinkText, item.highlight && styles.mobileNavLinkTextHighlight]}>{item.label}</Text>
-                  {item.highlight && <Ionicons name="arrow-forward" size={18} color="#020617" />}
+                  <Text style={[styles.mobileNavLinkText, item.highlight && styles.mobileNavLinkTextHighlight, item.danger && styles.mobileNavLinkLogoutText]}>{item.label}</Text>
+                  {item.highlight && <Ionicons name="arrow-forward" size={18} color={item.danger ? "#020617" : "#fff"} />}
                 </TouchableOpacity>
               ))}
             </Animated.View>
@@ -746,8 +750,8 @@ const styles = StyleSheet.create({
   },
   mobileNavLinkHighlight: {
     marginTop: 6,
-    backgroundColor: "#facc15",
-    shadowColor: "#facc15",
+    backgroundColor: "#020617",
+    shadowColor: "#020617",
     shadowOpacity: 0.26,
     shadowRadius: 18,
     elevation: 7,
@@ -765,10 +769,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.08)",
   },
-  mobileNavIconHighlight: { backgroundColor: "rgba(2,6,23,0.10)" },
+  mobileNavIconHighlight: { backgroundColor: "rgba(255,255,255,0.12)" },
   mobileNavIconLogout: { backgroundColor: "rgba(220,38,38,0.10)" },
   mobileNavLinkText: { flex: 1, color: "rgba(255,255,255,0.78)", fontSize: 14, fontWeight: "800" },
-  mobileNavLinkTextHighlight: { color: "#020617", fontWeight: "900" },
+  mobileNavLinkTextHighlight: { color: "#fff", fontWeight: "900" },
+  mobileNavLinkLogoutText: { color: "#020617" },
   mobileAction: { marginTop: 8, alignItems: "center" },
   accountMenu: {
     position: "absolute",

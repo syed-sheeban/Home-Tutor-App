@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   ScrollView,
   StyleSheet,
@@ -150,7 +149,7 @@ export default function BecomeTutorScreen() {
         }
       } catch (error) {
         const message = error?.response?.data?.message || "Could not load your tutor application.";
-        if (error?.response?.status !== 404) Alert.alert("Tutor Application", message);
+        if (error?.response?.status !== 404) showFeedback("error", "Tutor Application", message);
       } finally {
         if (active) setLoadingApplication(false);
       }
@@ -296,7 +295,7 @@ export default function BecomeTutorScreen() {
         qualificationFile: file,
       }));
     } catch (_error) {
-      Alert.alert("Certificate Upload", "Could not select the certificate file.");
+      showFeedback("error", "Certificate Upload", "Could not select the certificate file.");
     }
   };
 

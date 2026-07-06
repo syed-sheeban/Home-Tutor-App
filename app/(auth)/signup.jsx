@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import useAuthStore from '../../store/authStore';
 import AuthSuccessModal from '../../components/auth-success-modal';
+import { buildAuthUrl } from '../../services/webApp';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -19,6 +20,11 @@ export default function SignupScreen() {
   const requestedRole = Array.isArray(params.role) ? params.role[0] : params.role;
   const successRole = String(successUser?.role || requestedRole || '').toUpperCase();
   const isTutorSignup = successRole === 'TUTOR';
+  const authUrl = buildAuthUrl({
+    mode: 'signup',
+    role: requestedRole || 'student',
+    sessionReset: authSessionKey,
+  });
 
   // Injected JavaScript to listen to localStorage and communicate success
   const injectedJS = `
@@ -149,7 +155,7 @@ export default function SignupScreen() {
 
       <View style={styles.webviewContainer}>
         <WebView
-          source={{ uri: `https://home-tutor-production.up.railway.app/auth?mode=signup&role=${params.role || 'student'}&sessionReset=${authSessionKey}` }}
+          source={{ uri: authUrl }}
           injectedJavaScript={injectedJS}
           injectedJavaScriptBeforeContentLoaded={injectedJS}
           onMessage={handleMessage}

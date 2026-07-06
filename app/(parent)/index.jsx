@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert } from "react-native";
 import useAuthStore from "../../store/authStore";
 import { parentService } from "../../services/parentService";
+import { shouldRefreshDashboard, subscribeToDashboardUpdates } from "../../services/dashboardRealtime";
+import PremiumFeedbackModal from "../../components/premium-feedback-modal";
 import {
   DashboardShell,
   EmptyState,
@@ -20,6 +21,7 @@ export default function ParentDashboard() {
   const [tutors, setTutors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [feedback, setFeedback] = useState(null);
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -30,7 +32,7 @@ export default function ParentDashboard() {
       setData(dashboardData);
       setTutors(Array.isArray(tutorData) ? tutorData : []);
     } catch (error) {
-      Alert.alert("Parent Dashboard", error?.response?.data?.message || "Could not load parent dashboard.");
+      setFeedback({ type: "error", title: "Parent Dashboard", message: error?.response?.data?.message || "Could not load parent dashboard." });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -41,28 +43,31 @@ export default function ParentDashboard() {
     loadDashboard();
   }, [loadDashboard]);
 
+  useEffect(() => subscribeToDashboardUpdates((payload) => {
+    if (shouldRefreshDashboard(payload)) loadDashboard();
+  }), [loadDashboard]);
+
   const onRefresh = () => {
     setRefreshing(true);
     loadDashboard();
   };
 
   const child = data?.child;
-  const stats = data?.stats || {};
-  const progress = data?.progressOverview || EMPTY;
+  const stats = useMemo(() => data?.stats || {}, [data?.stats]);
+  const progressUpdates = data?.progressUpdates || EMPTY;
   const sessions = data?.upcomingSessions || EMPTY;
   const bookings = data?.bookingHistory || EMPTY;
-  const invoices = data?.invoices || EMPTY;
   const reviews = data?.reviews || EMPTY;
   const notes = data?.notes || EMPTY;
 
   const statItems = useMemo(
     () => [
-      { label: "Avg Progress", value: `${stats.averageProgress || 0}%`, icon: "trending-up-outline" },
-      { label: "Sessions", value: stats.upcomingSessions || sessions.length, icon: "calendar-outline" },
-      { label: "Tutors", value: stats.activeTutors || tutors.length, icon: "people-outline" },
-      { label: "Invoice Total", value: `Rs ${stats.totalPayments || 0}`, icon: "card-outline" },
+      { label: "Tutor Updates", value: stats.progressUpdates || progressUpdates.length, icon: "trending-up-outline" },
+      { label: "Upcoming Sessions", value: stats.upcomingSessions || sessions.length, icon: "calendar-outline" },
+      { label: "Active Tutors", value: stats.activeTutors || tutors.length, icon: "people-outline" },
+      { label: "Bookings", value: bookings.length, icon: "document-text-outline" },
     ],
-    [stats, sessions.length, tutors.length],
+    [stats, progressUpdates.length, sessions.length, tutors.length, bookings.length],
   );
 
   if (loading) return <SkeletonDashboard label="Loading parent dashboard..." />;
@@ -74,7 +79,7 @@ export default function ParentDashboard() {
       subtitle={{
         title: child?.user?.fullName ? `${child.user.fullName}'s progress` : "Child learning overview",
         text: child
-          ? `${child.classGrade || "Class not added"} • ${child.learningNeed || "Learning goal not added"}`
+          ? `${child.classGrade || "Class not added"} - ${child.learningNeed || "Learning goal not added"}`
           : "Link a student profile to see progress, sessions, bookings, and reports.",
         icon: "heart-outline",
       }}
@@ -84,19 +89,19 @@ export default function ParentDashboard() {
     >
       <StatGrid stats={statItems} />
 
-      <SectionCard title="Child Progress" eyebrow="Learning" icon="trending-up-outline">
-        {progress.length ? (
-          progress.map((item) => (
+      <SectionCard title="Tutor Progress Journal" eyebrow="Learning" icon="trending-up-outline">
+        {progressUpdates.length ? (
+          progressUpdates.map((item) => (
             <ListRow
-              key={item.name}
+              key={item.id}
               icon="stats-chart-outline"
-              title={item.name}
-              subtitle={item.note || "Progress tracked from sessions"}
-              meta={`${item.progress || 0}%`}
+              title={item.title || item.subject}
+              subtitle={item.summary || "Tutor-written progress update"}
+              meta={Number.isInteger(item.score) ? `${item.score}%` : formatDate(item.createdAt)}
             />
           ))
         ) : (
-          <EmptyState label="Progress appears after bookings and sessions are added." />
+          <EmptyState label="Tutor progress updates will appear here after your child's tutor writes them." />
         )}
       </SectionCard>
 
@@ -125,7 +130,7 @@ export default function ParentDashboard() {
               key={tutor.id}
               icon="person-outline"
               title={tutor.name || "Tutor"}
-              subtitle={`${tutor.subject || "Subject"} · ${tutor.availableDays?.join(", ") || "Availability pending"} · ${tutor.teachingMode || "BOTH"}`}
+              subtitle={`${tutor.subject || "Subject"} - ${tutor.availableDays?.join(", ") || "Availability pending"} - ${tutor.teachingMode || "BOTH"}`}
               meta={tutor.rating ? `${tutor.rating}/5 (${tutor.reviews || 0})` : "New"}
             />
           ))
@@ -134,35 +139,25 @@ export default function ParentDashboard() {
         )}
       </SectionCard>
 
-      <SectionCard title="Payments" eyebrow="Invoices" icon="card-outline">
-        {invoices.length ? (
-          invoices.map((invoice) => (
+      <SectionCard title="Booking History" eyebrow="Requests" icon="document-text-outline">
+        {bookings.length ? (
+          bookings.map((booking) => (
             <ListRow
-              key={invoice.id}
-              icon="receipt-outline"
-              title={invoice.invoiceNo || "Invoice"}
-              subtitle={invoice.subject || "HomeTutor payment"}
-              meta={`Rs ${invoice.amount || 0}`}
-              badge={invoice.status}
-              tone={getStatusTone(invoice.status)}
+              key={booking.id}
+              icon="calendar-number-outline"
+              title={booking.subject || "Booking"}
+              subtitle={booking.tutor?.user?.fullName || "Tutor pending"}
+              meta={booking.time || "Time pending"}
+              badge={booking.status}
+              tone={getStatusTone(booking.status)}
             />
           ))
         ) : (
-          <EmptyState label="No invoice records yet." />
+          <EmptyState label="No booking history yet." />
         )}
       </SectionCard>
 
       <SectionCard title="Reports" eyebrow="Bookings & Feedback" icon="document-text-outline">
-        {bookings.slice(0, 3).map((booking) => (
-          <ListRow
-            key={booking.id}
-            icon="calendar-number-outline"
-            title={booking.subject || "Booking"}
-            subtitle={booking.tutor?.user?.fullName || "Tutor pending"}
-            badge={booking.status}
-            tone={getStatusTone(booking.status)}
-          />
-        ))}
         {reviews.slice(0, 2).map((review) => (
           <ListRow
             key={review.id}
@@ -180,8 +175,22 @@ export default function ParentDashboard() {
             subtitle={note.note || "Tutor note"}
           />
         ))}
-        {!bookings.length && !reviews.length && !notes.length && <EmptyState label="Reports appear after tutor activity." />}
+        {!reviews.length && !notes.length && <EmptyState label="Feedback appears after tutor activity." />}
       </SectionCard>
+      <PremiumFeedbackModal
+        visible={!!feedback}
+        type={feedback?.type}
+        title={feedback?.title}
+        message={feedback?.message}
+        onClose={() => setFeedback(null)}
+      />
     </DashboardShell>
   );
+}
+
+function formatDate(value) {
+  if (!value) return "Not recorded";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not recorded";
+  return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }

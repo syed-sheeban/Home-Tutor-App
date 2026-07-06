@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import useAuthStore from '../../store/authStore';
 import AuthSuccessModal from '../../components/auth-success-modal';
+import { buildAuthUrl } from '../../services/webApp';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -16,6 +17,11 @@ export default function LoginScreen() {
   const [successUser, setSuccessUser] = useState(null);
   const handledAuthRef = useRef(false);
   const authSessionKey = useRef(Date.now()).current;
+  const authUrl = buildAuthUrl({
+    mode: 'login',
+    role: Array.isArray(params.role) ? params.role[0] : params.role || 'student',
+    sessionReset: authSessionKey,
+  });
 
   // Injected JavaScript to listen to localStorage and communicate success
   const injectedJS = `
@@ -129,7 +135,7 @@ export default function LoginScreen() {
 
       <View style={styles.webviewContainer}>
         <WebView
-          source={{ uri: `https://home-tutor-production.up.railway.app/auth?mode=login&role=${params.role || 'student'}&sessionReset=${authSessionKey}` }}
+          source={{ uri: authUrl }}
           injectedJavaScript={injectedJS}
           injectedJavaScriptBeforeContentLoaded={injectedJS}
           onMessage={handleMessage}

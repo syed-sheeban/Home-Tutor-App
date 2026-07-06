@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   ImageBackground,
   ScrollView,
   StyleSheet,
@@ -17,6 +16,7 @@ import { getNearbyTutors, getTutors, requestLesson } from "../../services/api";
 import useAuthStore from "../../store/authStore";
 import LocationMapPicker from "../../components/location-map-picker";
 import { NotificationBell } from "../../components/notification-bell";
+import PremiumFeedbackModal from "../../components/premium-feedback-modal";
 
 // Screen width not used for layout spacing
 
@@ -26,6 +26,14 @@ const getSubjectLabel = (subject) => {
   if (!subject) return "";
   if (typeof subject === "string") return subject;
   return subject.subject || subject.name || subject.title || "";
+};
+
+const getAvailabilityLabel = (tutor) => {
+  const status = String(tutor.availabilityStatus || "").toUpperCase();
+  if (status === "UNAVAILABLE") return "Currently unavailable";
+  if (tutor.availableToday) return "Currently available today";
+  if (status === "AVAILABLE") return "Currently available";
+  return "Availability pending";
 };
 
 export default function DiscoverScreen() {
@@ -43,6 +51,7 @@ export default function DiscoverScreen() {
   const [bookingId, setBookingId] = useState(null);
   const [bookingForm, setBookingForm] = useState({ subject: "", time: "", fee: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState(null);
 
   const loadTutors = useCallback(async () => {
     setLoading(true);
@@ -80,10 +89,15 @@ export default function DiscoverScreen() {
 
   const handleBookingSubmit = async (tutor) => {
     if (!isAuthenticated) {
-      Alert.alert("Sign In Required", "Please sign in to request a lesson.", [
-        { text: "Cancel", style: "cancel" },
-        { text: "Sign In", onPress: () => router.push("/(auth)/login") },
-      ]);
+      setFeedbackModal({
+        type: "warning",
+        title: "Sign In Required",
+        message: "Please sign in to request a lesson.",
+        actions: [
+          { label: "Sign In", primary: true, onPress: () => router.push("/(auth)/login") },
+          { label: "Cancel" },
+        ],
+      });
       return;
     }
     try {
@@ -94,14 +108,19 @@ export default function DiscoverScreen() {
         time: bookingForm.time,
         fee: bookingForm.fee,
       });
-      Alert.alert("✓ Request Sent", `Your booking request has been sent to ${tutor.name}.`);
+      setFeedbackModal({
+        type: "success",
+        title: "Request Sent",
+        message: `Your booking request has been sent to ${tutor.name}.`,
+      });
       setBookingId(null);
       setBookingForm({ subject: "", time: "", fee: "" });
     } catch (err) {
-      Alert.alert(
-        "Could Not Book",
-        err?.response?.data?.message || "Please log in as a student or parent to book a tutor."
-      );
+      setFeedbackModal({
+        type: "error",
+        title: "Could Not Book",
+        message: err?.response?.data?.message || "Please log in as a student or parent to book a tutor.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -288,6 +307,14 @@ export default function DiscoverScreen() {
           ))}
         </View>
       )}
+      <PremiumFeedbackModal
+        visible={!!feedbackModal}
+        type={feedbackModal?.type}
+        title={feedbackModal?.title}
+        message={feedbackModal?.message}
+        actions={feedbackModal?.actions}
+        onClose={() => setFeedbackModal(null)}
+      />
     </ScrollView>
   );
 }
@@ -346,12 +373,10 @@ function TutorCard({ tutor, index, isBookingOpen, bookingForm, setBookingForm, o
               <Text style={styles.cardDegree} numberOfLines={2}>{tutor.degree || "Qualification not added"}</Text>
             </View>
           </View>
-          {tutor.rating != null && (
-            <View style={styles.ratingBadge}>
-              <Ionicons name="star" size={12} color="#facc15" />
-              <Text style={styles.ratingText}>{tutor.rating}</Text>
-            </View>
-          )}
+          <View style={styles.ratingBadge}>
+            <Ionicons name="star" size={12} color="#facc15" />
+            <Text style={styles.ratingText}>{Number(tutor.rating || 0).toFixed(1)}</Text>
+          </View>
         </View>
 
         {/* Meta row */}
@@ -375,12 +400,12 @@ function TutorCard({ tutor, index, isBookingOpen, bookingForm, setBookingForm, o
         <View style={styles.availabilityCard}>
           <View style={styles.availabilityTop}>
             <Ionicons
-              name={tutor.availableToday ? "checkmark-circle" : "time-outline"}
+              name={String(tutor.availabilityStatus).toUpperCase() === "UNAVAILABLE" ? "close-circle" : tutor.availableToday ? "checkmark-circle" : "time-outline"}
               size={16}
-              color={tutor.availableToday ? "#0f766e" : "#92400e"}
+              color={String(tutor.availabilityStatus).toUpperCase() === "UNAVAILABLE" ? "#991b1b" : tutor.availableToday ? "#0f766e" : "#92400e"}
             />
             <Text style={styles.availabilityTitle}>
-              {tutor.availableToday ? "Available today" : tutor.availabilityStatus || "Availability pending"}
+              {getAvailabilityLabel(tutor)}
             </Text>
           </View>
           <Text style={styles.availabilityText}>
@@ -424,13 +449,13 @@ function TutorCard({ tutor, index, isBookingOpen, bookingForm, setBookingForm, o
 
         {/* Footer row: distance + rate */}
         <View style={styles.cardFooter}>
-          <View style={styles.footerStat}>
-            <Text style={styles.footerStatLabel}>Distance</Text>
-            <Text style={styles.footerStatVal}>
-              {tutor.distance != null ? `${Number(tutor.distance).toFixed(1)} km` : "Set location"}
-            </Text>
-          </View>
-          <View style={styles.footerStat}>
+          {tutor.distance != null && (
+            <View style={styles.footerStat}>
+              <Text style={styles.footerStatLabel}>Distance</Text>
+              <Text style={styles.footerStatVal}>{Number(tutor.distance).toFixed(1)} km</Text>
+            </View>
+          )}
+          <View style={[styles.footerStat, tutor.distance == null && styles.footerStatWide]}>
             <Text style={styles.footerStatLabel}>Session Rate</Text>
             <Text style={styles.footerStatVal}>{displayRate}</Text>
           </View>
@@ -823,6 +848,7 @@ const styles = StyleSheet.create({
     borderColor: "#e2e8f0",
     padding: 11,
   },
+  footerStatWide: { flex: 1 },
   footerStatLabel: { color: "#64748b", fontSize: 11, lineHeight: 15, fontWeight: "900", textTransform: "uppercase", letterSpacing: 0.8 },
   footerStatVal: { color: "#020617", fontSize: 16, lineHeight: 21, fontWeight: "900", marginTop: 4 },
 
@@ -874,3 +900,4 @@ const styles = StyleSheet.create({
   },
   bookingCancelText: { color: SLATE500, fontSize: 15, fontWeight: "900" },
 });
+

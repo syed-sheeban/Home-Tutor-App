@@ -36,6 +36,31 @@ export const adminService = {
     const response = await api.delete(`/admin/reviews/${reviewId}`);
     return response.data;
   },
+
+  getNotifications: async () => {
+    const response = await api.get("/admin/notifications");
+    return response.data;
+  },
+
+  createNotification: async (payload) => {
+    const response = await api.post("/admin/notifications", payload);
+    return response.data;
+  },
+
+  updateNotification: async (notificationId, payload) => {
+    const response = await api.put(`/admin/notifications/${notificationId}`, payload);
+    return response.data;
+  },
+
+  deleteNotification: async (notificationId) => {
+    const response = await api.delete(`/admin/notifications/${notificationId}`);
+    return response.data;
+  },
+
+  resendNotification: async (notificationId) => {
+    const response = await api.post(`/admin/notifications/${notificationId}/resend`);
+    return response.data;
+  },
 };
 
 export default adminService;

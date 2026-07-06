@@ -1,7 +1,41 @@
 import axios from "axios";
+import Constants from "expo-constants";
+import { Platform } from "react-native";
 import useAuthStore from "../store/authStore";
 
-export const API_BASE_URL = "https://home-tutor-production.up.railway.app/api";
+const normalizeApiUrl = (value) => {
+  const trimmed = String(value || "").trim().replace(/\/+$/, "");
+  if (!trimmed) return "";
+  return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
+};
+
+const getExpoHost = () => {
+  const hostUri =
+    Constants.expoConfig?.hostUri ||
+    Constants.manifest2?.extra?.expoClient?.hostUri ||
+    Constants.manifest?.debuggerHost;
+
+  return String(hostUri || "").split(":")[0];
+};
+
+const getLocalApiBaseUrl = () => {
+  const configuredUrl =
+    process.env.EXPO_PUBLIC_API_BASE_URL ||
+    Constants.expoConfig?.extra?.apiBaseUrl;
+
+  if (configuredUrl) return normalizeApiUrl(configuredUrl);
+
+  const expoHost = getExpoHost();
+  if (expoHost && !["localhost", "127.0.0.1"].includes(expoHost)) {
+    return `http://${expoHost}:5000/api`;
+  }
+
+  if (Platform.OS === "android") return "http://10.0.2.2:5000/api";
+
+  return "http://localhost:5000/api";
+};
+
+export const API_BASE_URL = getLocalApiBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,

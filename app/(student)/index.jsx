@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import useAuthStore from "../../store/authStore";
 import { studentService } from "../../services/studentService";
+import { shouldRefreshDashboard, subscribeToDashboardUpdates } from "../../services/dashboardRealtime";
+import PremiumFeedbackModal from "../../components/premium-feedback-modal";
 import {
   DashboardShell,
   EmptyState,
@@ -19,13 +21,14 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actionModal, setActionModal] = useState(null);
+  const [feedback, setFeedback] = useState(null);
 
   const loadDashboard = useCallback(async () => {
     try {
       const response = await studentService.getStudentDashboard();
       setData(response);
     } catch (error) {
-      Alert.alert("Student Dashboard", error?.response?.data?.message || "Could not load your dashboard.");
+      setFeedback({ type: "error", title: "Student Dashboard", message: error?.response?.data?.message || "Could not load your dashboard." });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -36,6 +39,10 @@ export default function StudentDashboard() {
     loadDashboard();
   }, [loadDashboard]);
 
+  useEffect(() => subscribeToDashboardUpdates((payload) => {
+    if (shouldRefreshDashboard(payload)) loadDashboard();
+  }), [loadDashboard]);
+
   const onRefresh = () => {
     setRefreshing(true);
     loadDashboard();
@@ -44,30 +51,33 @@ export default function StudentDashboard() {
   const student = data?.student;
   const fullName = student?.user?.fullName || student?.user?.name || "Student";
   const firstName = fullName.split(" ")?.[0] || "Student";
-  const stats = data?.stats || {};
+  const stats = useMemo(() => data?.stats || {}, [data?.stats]);
   const sessions = data?.upcomingClasses || EMPTY;
   const completed = data?.completedClasses || EMPTY;
   const proposals = data?.scheduleProposals || EMPTY;
-  const subjects = data?.subjectProgress || EMPTY;
+  const progressUpdates = data?.progressUpdates || EMPTY;
+  const latestProgress = progressUpdates[0];
   const tutors = data?.tutors || EMPTY;
+  const nextClass = sessions[0];
 
   const statItems = useMemo(
     () => [
       { label: "Classes This Week", value: stats.classesThisWeek || 0, icon: "calendar-outline" },
-      { label: "Average Progress", value: `${stats.averageProgress || 0}%`, icon: "trending-up-outline" },
-      { label: "Completed", value: completed.length, icon: "checkmark-done-outline" },
+      { label: "Tutor Updates", value: stats.progressUpdates || progressUpdates.length, icon: "trending-up-outline" },
+      { label: "Schedule Decisions", value: proposals.length, icon: "mail-unread-outline" },
       { label: "Active Tutors", value: stats.activeTutors || tutors.length, icon: "people-outline" },
     ],
-    [stats, completed.length, tutors.length],
+    [stats, progressUpdates.length, proposals.length, tutors.length],
   );
 
   const submitScheduleResponse = async (proposal, action, message = "") => {
     try {
       await studentService.respondToSchedule(proposal.id, action, message);
       setActionModal(null);
+      setFeedback({ type: "success", title: "Schedule Updated", message: "Your schedule response was sent." });
       loadDashboard();
     } catch (error) {
-      Alert.alert("Schedule", error?.response?.data?.message || "Could not update schedule.");
+      setFeedback({ type: "error", title: "Schedule", message: error?.response?.data?.message || "Could not update schedule." });
     }
   };
 
@@ -78,42 +88,67 @@ export default function StudentDashboard() {
         text: actionModal.text,
       });
       setActionModal(null);
+      setFeedback({ type: "success", title: "Review Saved", message: "Your tutor feedback was saved." });
       loadDashboard();
     } catch (error) {
-      Alert.alert("Tutor Review", error?.response?.data?.message || "Could not save review.");
+      setFeedback({ type: "error", title: "Tutor Review", message: error?.response?.data?.message || "Could not save review." });
     }
   };
 
   if (loading) return <SkeletonDashboard label="Loading student dashboard..." />;
 
   return (
-    <DashboardShell
-      title="Student Dashboard"
-      icon="school-outline"
-      subtitle={{
-        title: `Hello, ${fullName}`,
-        text: `${firstName}, your progress, sessions, tutors, goals, and study materials are ready in one calm workspace.`,
-        icon: "sparkles-outline",
-      }}
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-      onLogout={logout}
-    >
-      <StatGrid stats={statItems} />
+    <>
+      <DashboardShell
+        title="Student Dashboard"
+        icon="school-outline"
+        subtitle={{
+          title: `Hello, ${fullName}`,
+          text: `${firstName}, your progress, sessions, tutors, goals, and study materials are ready in one calm workspace.`,
+          icon: "sparkles-outline",
+        }}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        onLogout={logout}
+      >
+        <StatGrid stats={statItems} />
 
-      <SectionCard title="Progress Overview" eyebrow="Learning" icon="trending-up-outline">
-        {subjects.length ? (
-          subjects.map((subject) => (
+      <SectionCard title="Next Class" eyebrow="Focus" icon="calendar-number-outline">
+        {nextClass ? (
+          <ListRow
+            icon="school-outline"
+            title={`${nextClass.subject || "Class"} with ${nextClass.tutor || "Tutor"}`}
+            subtitle="Offline class"
+            meta={`${formatClassDay(nextClass.date || nextClass.day)} ${formatClassTime(nextClass.startTime, nextClass.endTime, nextClass.time)}`}
+            badge={nextClass.status || "Scheduled"}
+            tone="success"
+          />
+        ) : (
+          <EmptyState label="Your upcoming classes will appear once a tutor schedules them." />
+        )}
+      </SectionCard>
+
+      <SectionCard title="Tutor Progress Journal" eyebrow="Learning Focus" icon="trending-up-outline">
+        {latestProgress && (
+          <View style={styles.featureCard}>
+            <Text style={styles.featureEyebrow}>{latestProgress.subject || "Latest update"}</Text>
+            <Text style={styles.featureTitle}>{latestProgress.title}</Text>
+            <Text style={styles.featureText}>{latestProgress.summary}</Text>
+            {!!latestProgress.nextSteps && <Text style={styles.featureNext}>Next focus: {latestProgress.nextSteps}</Text>}
+          </View>
+        )}
+        {progressUpdates.length ? (
+          progressUpdates.map((update) => (
             <ListRow
-              key={subject.name}
+              key={update.id}
               icon="stats-chart-outline"
-              title={subject.name}
-              subtitle={subject.note || "Progress tracked from tutor updates"}
-              meta={`${subject.progress || 0}%`}
+              title={update.title || update.subject}
+              subtitle={update.summary || "Tutor progress update"}
+              meta={Number.isInteger(update.score) ? `${update.score}%` : formatDate(update.createdAt)}
             />
           ))
         ) : (
-          <EmptyState label="Progress appears after classes, notes, or bookings are added." />
+          <EmptyState label="Tutor-written progress updates will appear here." />
         )}
       </SectionCard>
 
@@ -125,8 +160,8 @@ export default function StudentDashboard() {
               icon="calendar-outline"
               title={session.subject || "Session"}
               subtitle={session.tutor || "Tutor details pending"}
-              meta={`${session.day || ""} ${session.time || ""}`.trim()}
-              badge={session.mode}
+              meta={`${formatClassDay(session.date || session.day)} ${formatClassTime(session.startTime, session.endTime, session.time)}`}
+              badge={session.mode || "Offline"}
             />
           ))
         ) : (
@@ -141,7 +176,7 @@ export default function StudentDashboard() {
               key={proposal.id}
               icon="calendar-number-outline"
               title={`${proposal.subject || "Class"} with ${proposal.tutorName || "Tutor"}`}
-              subtitle={`${proposal.date ? new Date(proposal.date).toLocaleDateString("en-IN") : "Date pending"} · ${proposal.startTime || ""}-${proposal.endTime || ""}`}
+              subtitle={`${proposal.date ? new Date(proposal.date).toLocaleDateString("en-IN") : "Date pending"} - ${proposal.startTime || ""}-${proposal.endTime || ""}`}
               badge={proposal.status}
               tone="warning"
               onPress={() => setActionModal({ type: "schedule", proposal, message: "" })}
@@ -160,7 +195,7 @@ export default function StudentDashboard() {
               icon="checkmark-circle-outline"
               title={session.subject || "Class"}
               subtitle={session.tutor || "Tutor"}
-              meta={`${session.date ? new Date(session.date).toLocaleDateString("en-IN") : ""} ${session.time || ""}`}
+              meta={`${formatDate(session.date)} ${session.time || ""}`}
               badge="Completed"
               tone="success"
             />
@@ -196,14 +231,48 @@ export default function StudentDashboard() {
         )}
       </SectionCard>
 
+      </DashboardShell>
+
       <StudentActionModal
         modal={actionModal}
         setModal={setActionModal}
         onSchedule={submitScheduleResponse}
         onReview={submitReview}
       />
-    </DashboardShell>
+      <PremiumFeedbackModal
+        visible={!!feedback}
+        type={feedback?.type}
+        title={feedback?.title}
+        message={feedback?.message}
+        onClose={() => setFeedback(null)}
+      />
+    </>
   );
+}
+
+function formatDate(value) {
+  if (!value) return "Not recorded";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not recorded";
+  return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function formatClassDay(value) {
+  if (!value) return "Day pending";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short" });
+}
+
+function formatClassTime(start, end, fallback) {
+  if (!start && !end) return fallback || "Time pending";
+  const format = (value) => {
+    if (!value) return "";
+    const date = new Date(`2026-01-01T${value}:00`);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  };
+  return [start, end].filter(Boolean).map(format).join(" - ");
 }
 
 function StudentActionModal({ modal, setModal, onSchedule, onReview }) {
@@ -220,19 +289,30 @@ function StudentActionModal({ modal, setModal, onSchedule, onReview }) {
 
           {modal.type === "review" ? (
             <>
-              <TextInput
-                style={styles.input}
-                value={modal.rating}
-                onChangeText={(rating) => setModal({ ...modal, rating })}
-                keyboardType="number-pad"
-                placeholder="Rating from 1 to 5"
-              />
+              <View style={styles.starField}>
+                <Text style={styles.fieldLabel}>Rating</Text>
+                <View style={styles.starRow}>
+                  {[1, 2, 3, 4, 5].map((value) => {
+                    const active = Number(modal.rating) >= value;
+                    return (
+                      <TouchableOpacity
+                        key={value}
+                        style={[styles.starButton, active && styles.starButtonActive]}
+                        onPress={() => setModal({ ...modal, rating: value })}
+                        activeOpacity={0.82}
+                      >
+                        <Text style={[styles.starText, active && styles.starTextActive]}>*</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
               <TextInput
                 style={[styles.input, styles.multiline]}
                 value={modal.text}
                 onChangeText={(text) => setModal({ ...modal, text })}
                 multiline
-                placeholder="Share your feedback"
+                placeholder="Write your custom review"
               />
               <TouchableOpacity style={styles.primary} onPress={onReview}>
                 <Text style={styles.primaryText}>Save Review</Text>
@@ -275,19 +355,54 @@ function StudentActionModal({ modal, setModal, onSchedule, onReview }) {
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: "rgba(2,6,23,0.72)", justifyContent: "center", padding: 20 },
-  modal: { backgroundColor: "#fff", borderRadius: 24, padding: 20, gap: 12 },
+  modal: { backgroundColor: "#fff", borderRadius: 8, padding: 20, gap: 12 },
   eyebrow: { color: "#14b8a6", fontSize: 10, fontWeight: "900", letterSpacing: 1.5, textTransform: "uppercase" },
   title: { color: "#020617", fontSize: 23, fontWeight: "900" },
   copy: { color: "#64748b", fontSize: 13, lineHeight: 20 },
-  input: { borderWidth: 1, borderColor: "#cbd5e1", borderRadius: 14, padding: 12, color: "#0f172a" },
+  input: { borderWidth: 1, borderColor: "#cbd5e1", borderRadius: 8, padding: 12, color: "#0f172a" },
   multiline: { minHeight: 88, textAlignVertical: "top" },
+  fieldLabel: { color: "#334155", fontSize: 11, fontWeight: "900", textTransform: "uppercase", letterSpacing: 0.8 },
+  starField: {
+    borderWidth: 1,
+    borderColor: "#fde68a",
+    borderRadius: 8,
+    backgroundColor: "#fffbeb",
+    padding: 12,
+    gap: 9,
+  },
+  starRow: { flexDirection: "row", gap: 8 },
+  starButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#fde68a",
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  starButtonActive: { backgroundColor: "#020617", borderColor: "#020617" },
+  starText: { color: "#d97706", fontSize: 22, fontWeight: "900" },
+  starTextActive: { color: "#facc15" },
   actions: { gap: 8 },
-  primary: { backgroundColor: "#14b8a6", borderRadius: 14, padding: 13, alignItems: "center" },
+  primary: { backgroundColor: "#14b8a6", borderRadius: 8, padding: 13, alignItems: "center" },
   primaryText: { color: "#042f2e", fontWeight: "900" },
-  secondary: { backgroundColor: "#fef3c7", borderRadius: 14, padding: 13, alignItems: "center" },
+  secondary: { backgroundColor: "#fef3c7", borderRadius: 8, padding: 13, alignItems: "center" },
   secondaryText: { color: "#92400e", fontWeight: "900" },
-  danger: { backgroundColor: "#fee2e2", borderRadius: 14, padding: 13, alignItems: "center" },
+  danger: { backgroundColor: "#fee2e2", borderRadius: 8, padding: 13, alignItems: "center" },
   dangerText: { color: "#991b1b", fontWeight: "900" },
   cancel: { padding: 10, alignItems: "center" },
   cancelText: { color: "#64748b", fontWeight: "800" },
+  featureCard: {
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ccfbf1",
+    backgroundColor: "#f0fdfa",
+    padding: 14,
+    marginBottom: 10,
+  },
+  featureEyebrow: { color: "#0f766e", fontSize: 10, fontWeight: "900", letterSpacing: 1.1, textTransform: "uppercase" },
+  featureTitle: { color: "#020617", fontSize: 17, fontWeight: "900", marginTop: 5 },
+  featureText: { color: "#475569", fontSize: 13, lineHeight: 19, fontWeight: "700", marginTop: 6 },
+  featureNext: { color: "#0f766e", fontSize: 12, lineHeight: 18, fontWeight: "900", marginTop: 8 },
 });
