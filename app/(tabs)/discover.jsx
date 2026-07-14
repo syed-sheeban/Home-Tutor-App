@@ -28,6 +28,56 @@ const getSubjectLabel = (subject) => {
   return subject.subject || subject.name || subject.title || "";
 };
 
+const toTitleCase = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\b([a-z])/g, (match) => match.toUpperCase());
+
+const searchAliases = {
+  math: "mathematics",
+  maths: "mathematics",
+  mathematic: "mathematics",
+  computer: "computer science",
+  computers: "computer science",
+  cs: "computer science",
+  bio: "biology",
+  chem: "chemistry",
+  phy: "physics",
+  sci: "science",
+};
+
+const normalizeSearchValue = (value) =>
+  String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+const getSearchTerms = (value) => {
+  const normalized = normalizeSearchValue(value);
+  if (!normalized) return [];
+
+  const terms = new Set([normalized]);
+  normalized.split(" ").forEach((part) => {
+    if (searchAliases[part]) terms.add(searchAliases[part]);
+  });
+  if (searchAliases[normalized]) terms.add(searchAliases[normalized]);
+
+  return Array.from(terms);
+};
+
+const matchesSearchTerms = (value, terms) => {
+  const normalized = normalizeSearchValue(value);
+  return Boolean(normalized) && terms.some((term) => normalized.includes(term) || term.includes(normalized));
+};
+
+const formatMonthlyRate = (value) => {
+  if (!value) return "On request";
+  const text = String(value).trim();
+  const withCurrency = /^(rs|₹)/i.test(text) ? text : `Rs ${text}`;
+  return `${withCurrency} per month`;
+};
+
 const getAvailabilityLabel = (tutor) => {
   const status = String(tutor.availabilityStatus || "").toUpperCase();
   if (status === "UNAVAILABLE") return "Currently unavailable";
@@ -48,8 +98,6 @@ export default function DiscoverScreen() {
   const [radius, setRadius] = useState(5);
   const [showMap, setShowMap] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [bookingId, setBookingId] = useState(null);
-  const [bookingForm, setBookingForm] = useState({ subject: "", time: "", fee: "" });
   const [submitting, setSubmitting] = useState(false);
   const [feedbackModal, setFeedbackModal] = useState(null);
 
@@ -57,10 +105,10 @@ export default function DiscoverScreen() {
     setLoading(true);
     const data = searchLocation
       ? await getNearbyTutors(searchLocation.lat, searchLocation.lng, radius)
-      : await getTutors({ query, subject });
+      : await getTutors({ subject });
     setTutors(data);
     setLoading(false);
-  }, [query, radius, searchLocation, subject]);
+  }, [radius, searchLocation, subject]);
 
   useEffect(() => {
     const timer = setTimeout(loadTutors, 350);
@@ -68,19 +116,20 @@ export default function DiscoverScreen() {
   }, [loadTutors]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const searchTerms = getSearchTerms(query);
     return tutors.filter(
       (t) => {
         const tutorSubjects = (t.subjects || []).map((item) =>
-          getSubjectLabel(item).toLowerCase(),
+          getSubjectLabel(item),
         );
         const matchesSubject =
-          subject === "All" || tutorSubjects.includes(subject.toLowerCase());
+          subject === "All" || tutorSubjects.some((item) => matchesSearchTerms(item, [normalizeSearchValue(subject)]));
         const matchesQuery =
-          !q ||
-          t.name?.toLowerCase().includes(q) ||
-          t.area?.toLowerCase().includes(q) ||
-          tutorSubjects.some((item) => item.includes(q));
+          !searchTerms.length ||
+          matchesSearchTerms(t.name, searchTerms) ||
+          matchesSearchTerms(t.area, searchTerms) ||
+          matchesSearchTerms(t.degree, searchTerms) ||
+          tutorSubjects.some((item) => matchesSearchTerms(item, searchTerms));
 
         return matchesSubject && matchesQuery;
       }
@@ -102,19 +151,20 @@ export default function DiscoverScreen() {
     }
     try {
       setSubmitting(true);
+      const firstSubject = Array.isArray(tutor.subjects)
+        ? getSubjectLabel(tutor.subjects[0])
+        : getSubjectLabel(tutor.subject);
       await requestLesson({
         tutorId: tutor.id || tutor._id,
-        subject: bookingForm.subject || (tutor.subjects || [])[0] || "General",
-        time: bookingForm.time,
-        fee: bookingForm.fee,
+        subject: firstSubject || "General",
+        time: "",
+        fee: "",
       });
       setFeedbackModal({
         type: "success",
         title: "Request Sent",
         message: `Your booking request has been sent to ${tutor.name}.`,
       });
-      setBookingId(null);
-      setBookingForm({ subject: "", time: "", fee: "" });
     } catch (err) {
       setFeedbackModal({
         type: "error",
@@ -286,22 +336,20 @@ export default function DiscoverScreen() {
               key={tutor.id || tutor._id || index}
               tutor={tutor}
               index={index}
-              isBookingOpen={bookingId === (tutor.id || tutor._id)}
-              bookingForm={bookingForm}
-              setBookingForm={setBookingForm}
               onRequestMatch={() => {
                 const firstSubject = Array.isArray(tutor.subjects)
                   ? getSubjectLabel(tutor.subjects[0])
                   : getSubjectLabel(tutor.subject);
-                setBookingId(tutor.id || tutor._id);
-                setBookingForm({
-                  subject: firstSubject || "",
-                  time: "",
-                  fee: "",
+                setFeedbackModal({
+                  type: "info",
+                  title: "Send tutor request?",
+                  message: `Send a match request to ${tutor.name || "this tutor"} for ${toTitleCase(firstSubject || "General")}?`,
+                  actions: [
+                    { label: "Cancel" },
+                    { label: "Send Request", primary: true, onPress: () => handleBookingSubmit(tutor) },
+                  ],
                 });
               }}
-              onSubmit={() => handleBookingSubmit(tutor)}
-              onCancel={() => setBookingId(null)}
               submitting={submitting}
             />
           ))}
@@ -320,16 +368,17 @@ export default function DiscoverScreen() {
 }
 
 // ── TutorCard component ───────────────────────────────────────────────────────
-function TutorCard({ tutor, index, isBookingOpen, bookingForm, setBookingForm, onRequestMatch, onSubmit, onCancel, submitting }) {
+function TutorCard({ tutor, index, onRequestMatch, submitting }) {
   const subjectList = Array.isArray(tutor.subjects)
-    ? tutor.subjects.map(getSubjectLabel).filter(Boolean)
+    ? tutor.subjects.map((item) => toTitleCase(getSubjectLabel(item))).filter(Boolean)
     : tutor.subject
-      ? [getSubjectLabel(tutor.subject)].filter(Boolean)
+      ? [toTitleCase(getSubjectLabel(tutor.subject))].filter(Boolean)
       : [];
   const displayName = tutor.name || tutor.user?.fullName || "Tutor";
   const displayArea = tutor.area || tutor.location || tutor.locationName || "Location available after contact";
-  const displayRate = tutor.hourlyRate ? `₹${tutor.hourlyRate}/hr` : "On request";
+  const displayRate = formatMonthlyRate(tutor.hourlyRate);
   const displayExperience = tutor.experience || tutor.teachingExperience || "Experience not added";
+  const displayDegree = toTitleCase(tutor.degree || "Qualification not added");
   const isVerified = tutor.verified || tutor.isVerified || tutor.verificationStatus === "APPROVED";
 
   return (
@@ -370,7 +419,7 @@ function TutorCard({ tutor, index, isBookingOpen, bookingForm, setBookingForm, o
             </View>
             <View style={styles.degreeHighlight}>
               <Ionicons name="ribbon-outline" size={16} color="#0f766e" />
-              <Text style={styles.cardDegree} numberOfLines={2}>{tutor.degree || "Qualification not added"}</Text>
+              <Text style={styles.cardDegree} numberOfLines={2}>{displayDegree}</Text>
             </View>
           </View>
           <View style={styles.ratingBadge}>
@@ -414,7 +463,7 @@ function TutorCard({ tutor, index, isBookingOpen, bookingForm, setBookingForm, o
           <Text style={styles.availabilityText}>
             {tutor.availableTimeSlots?.[0]?.startTime
               ? `${tutor.availableTimeSlots[0].startTime}-${tutor.availableTimeSlots[0].endTime}`
-              : "Time on request"} · {tutor.teachingMode || "BOTH"} · {tutor.teachingRadius || 0} km
+              : "Time on request"} - {toTitleCase(tutor.teachingMode || "Both")}
           </Text>
         </View>
 
@@ -446,78 +495,24 @@ function TutorCard({ tutor, index, isBookingOpen, bookingForm, setBookingForm, o
             )}
           </View>
         )}
-
-        {/* Footer row: distance + rate */}
+        {/* Footer row */}
         <View style={styles.cardFooter}>
-          {tutor.distance != null && (
-            <View style={styles.footerStat}>
-              <Text style={styles.footerStatLabel}>Distance</Text>
-              <Text style={styles.footerStatVal}>{Number(tutor.distance).toFixed(1)} km</Text>
-            </View>
-          )}
-          <View style={[styles.footerStat, tutor.distance == null && styles.footerStatWide]}>
-            <Text style={styles.footerStatLabel}>Session Rate</Text>
+          <View style={styles.footerStat}>
+            <Text style={styles.footerStatLabel}>Monthly Rate</Text>
             <Text style={styles.footerStatVal}>{displayRate}</Text>
           </View>
         </View>
 
-        {/* Booking form / button */}
-        {isBookingOpen ? (
-          <View style={styles.bookingForm}>
-            <TextInput
-              style={styles.bookingInput}
-              value={bookingForm.subject}
-              onChangeText={(v) => setBookingForm((f) => ({ ...f, subject: v }))}
-              placeholder={subjectList[0] || "Subject"}
-              placeholderTextColor="#94a3b8"
-            />
-            <TextInput
-              style={styles.bookingInput}
-              value={bookingForm.time}
-              onChangeText={(v) => setBookingForm((f) => ({ ...f, time: v }))}
-              placeholder="Preferred time (e.g. Mon 5 PM)"
-              placeholderTextColor="#94a3b8"
-            />
-            <TextInput
-              style={styles.bookingInput}
-              value={bookingForm.fee}
-              onChangeText={(v) => setBookingForm((f) => ({ ...f, fee: v }))}
-              placeholder="Expected fee (₹)"
-              placeholderTextColor="#94a3b8"
-              keyboardType="numeric"
-            />
-            <View style={styles.bookingActions}>
-              <TouchableOpacity
-                style={styles.bookingSendBtn}
-                onPress={onSubmit}
-                disabled={submitting}
-                activeOpacity={0.85}
-              >
-                {submitting ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <>
-                    <Ionicons name="send-outline" size={14} color="#fff" />
-                    <Text style={styles.bookingSendText}>Send Request</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.bookingCancelBtn} onPress={onCancel} activeOpacity={0.85}>
-                <Text style={styles.bookingCancelText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={styles.requestMatchBtn}
-            onPress={onRequestMatch}
-            activeOpacity={0.88}
-          >
-            <Ionicons name="calendar-outline" size={17} color="#0f172a" />
-            <Text style={styles.requestMatchText}>Request Match</Text>
-            <Ionicons name="chevron-forward" size={16} color="#0f172a" />
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={[styles.requestMatchBtn, submitting && styles.requestMatchBtnDisabled]}
+          onPress={onRequestMatch}
+          disabled={submitting}
+          activeOpacity={0.88}
+        >
+          <Ionicons name="calendar-outline" size={17} color="#0f172a" />
+          <Text style={styles.requestMatchText}>{submitting ? "Sending..." : "Request Match"}</Text>
+          <Ionicons name="chevron-forward" size={16} color="#0f172a" />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -792,25 +787,29 @@ const styles = StyleSheet.create({
   },
   metaText: { flex: 1, color: "#334155", fontSize: 14, lineHeight: 19, fontWeight: "800" },
   availabilityCard: {
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#99f6e4",
+    borderColor: "#ccfbf1",
     backgroundColor: "#f0fdfa",
-    padding: 12,
-    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 3,
   },
-  availabilityTop: { flexDirection: "row", alignItems: "center", gap: 7 },
-  availabilityTitle: { color: "#0f766e", fontSize: 13, fontWeight: "900" },
-  availabilityText: { color: "#475569", fontSize: 12, lineHeight: 17, fontWeight: "700" },
+  availabilityTop: { flexDirection: "row", alignItems: "center", gap: 6 },
+  availabilityTitle: { color: "#0f766e", fontSize: 12, fontWeight: "900" },
+  availabilityText: { color: "#475569", fontSize: 11, lineHeight: 15, fontWeight: "750" },
   reviewPreview: {
     flexDirection: "row",
-    gap: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: "#14b8a6",
-    paddingLeft: 10,
+    gap: 9,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#dbeafe",
+    backgroundColor: "#eff6ff",
+    paddingHorizontal: 12,
+    paddingVertical: 11,
   },
-  reviewPreviewText: { color: "#475569", fontSize: 12, lineHeight: 18, fontStyle: "italic" },
-  reviewPreviewBy: { color: "#0f766e", fontSize: 11, fontWeight: "900", marginTop: 3 },
+  reviewPreviewText: { color: "#1e293b", fontSize: 12, lineHeight: 18, fontStyle: "italic", fontWeight: "700" },
+  reviewPreviewBy: { color: "#475569", fontSize: 11, fontWeight: "900", marginTop: 5 },
 
   subjectRow: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
   subjectTag: {
@@ -863,41 +862,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 4,
   },
+  requestMatchBtnDisabled: {
+    opacity: 0.65,
+  },
   requestMatchText: { color: "#020617", fontSize: 16, fontWeight: "900", flex: 1, textAlign: "center" },
-
-  bookingForm: { gap: 8, marginTop: 4 },
-  bookingInput: {
-    backgroundColor: SOFT,
-    borderWidth: 1.5,
-    borderColor: "#e2e8f0",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: DARK,
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  bookingActions: { flexDirection: "row", gap: 10, marginTop: 2 },
-  bookingSendBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: DARK,
-    borderRadius: 12,
-    paddingVertical: 12,
-  },
-  bookingSendText: { color: WHITE, fontSize: 15, fontWeight: "900" },
-  bookingCancelBtn: {
-    borderWidth: 1.5,
-    borderColor: "#e2e8f0",
-    borderRadius: 12,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bookingCancelText: { color: SLATE500, fontSize: 15, fontWeight: "900" },
 });
 

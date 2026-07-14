@@ -75,8 +75,8 @@ const statusCopy = {
   },
   APPROVED: {
     label: "Verified Tutor",
-    title: "Verified Tutor",
-    message: "Your tutor profile is approved. Families can now discover your verified tutor profile.",
+    title: "Application Approved",
+    message: "Your tutor application has been approved. Families can now discover your verified tutor profile.",
   },
   REJECTED: {
     label: "REJECTED",
@@ -414,9 +414,12 @@ export default function BecomeTutorScreen() {
             status={applicationStatus}
             statusCopy={currentStatus}
             message={rejectedMessage}
-            formData={formData}
             onViewApplication={() => setShowApplicationForm(true)}
           />
+        )}
+
+        {canApply && applicationStatus === "APPROVED" && showApplicationForm && (
+          <ApplicationDetailsCard formData={formData} onClose={() => setShowApplicationForm(false)} />
         )}
 
         {currentStatus && applicationStatus === "REJECTED" && (
@@ -464,7 +467,7 @@ export default function BecomeTutorScreen() {
               error={fieldErrors.experience}
             />
             <Input
-              label="Hourly Rate"
+              label="Monthly Rate"
               value={formData.hourlyRate}
               onChangeText={(value) => updateField("hourlyRate", value)}
               placeholder="700"
@@ -686,7 +689,7 @@ function StatusNotice({ status, statusCopy, message }) {
   );
 }
 
-function SubmittedApplicationCard({ status, statusCopy, message, formData, onViewApplication }) {
+function SubmittedApplicationCard({ status, statusCopy, message, onViewApplication }) {
   const isApproved = status === "APPROVED";
 
   return (
@@ -697,33 +700,70 @@ function SubmittedApplicationCard({ status, statusCopy, message, formData, onVie
         </View>
         <View style={styles.submittedCopy}>
           <Text style={styles.submittedEyebrow}>{statusCopy.label}</Text>
-          <Text style={styles.submittedTitle}>{isApproved ? "Tutor profile approved" : "Form submitted and under process"}</Text>
+          <Text style={styles.submittedTitle}>{isApproved ? "Your application has been approved" : "Form submitted and under process"}</Text>
         </View>
       </View>
 
       <Text style={styles.submittedMessage}>{message}</Text>
 
-      <View style={styles.submittedDetails}>
-        <DetailPill icon="book-outline" label="Qualification" value={formData.degree || "Added"} />
-        <DetailPill icon="document-attach-outline" label="Certificate" value={formData.qualificationFileName || "Submitted"} />
-        <DetailPill icon="school-outline" label="Subjects" value={formData.subjects?.length ? `${formData.subjects.length} selected` : "Added"} />
-      </View>
-
       <TouchableOpacity style={styles.submittedButton} onPress={onViewApplication} activeOpacity={0.86}>
-        <Text style={styles.submittedButtonText}>View Application</Text>
-        <Ionicons name="arrow-forward" size={18} color="#fff" />
+        <Text style={styles.submittedButtonText}>{isApproved ? "View Submitted Details" : "View Application"}</Text>
+        <Ionicons name={isApproved ? "document-text-outline" : "arrow-forward"} size={18} color="#fff" />
       </TouchableOpacity>
     </View>
   );
 }
 
-function DetailPill({ icon, label, value }) {
+const formatList = (items, fallback = "Not added") =>
+  Array.isArray(items) && items.length ? items.join(", ") : fallback;
+
+function ApplicationDetailsCard({ formData, onClose }) {
+  const details = [
+    { label: "Full Name", value: formData.fullName || "Not added", icon: "person-outline" },
+    { label: "Email Address", value: formData.email || "Not added", icon: "mail-outline" },
+    { label: "Highest Academic Degree", value: formData.degree || "Not added", icon: "book-outline" },
+    { label: "Teaching Experience", value: formData.experience || "Not added", icon: "time-outline" },
+    { label: "Monthly Rate", value: formData.hourlyRate ? `${formData.hourlyRate}` : "Not added", icon: "cash-outline" },
+    { label: "Core Subjects", value: formatList(formData.subjects), icon: "school-outline" },
+    { label: "Availability", value: formatList(formData.availability), icon: "calendar-outline" },
+    { label: "Teaching Location", value: formData.locationName || "Not added", icon: "location-outline" },
+    { label: "Teaching Radius", value: `${formData.teachingRadius || "8"} km`, icon: "radio-outline" },
+    { label: "Qualification Certificate", value: formData.qualificationFileName || "Submitted", icon: "document-attach-outline" },
+  ];
+
   return (
-    <View style={styles.detailPill}>
-      <Ionicons name={icon} size={17} color="#14b8a6" />
-      <View style={styles.detailPillCopy}>
-        <Text style={styles.detailPillLabel}>{label}</Text>
-        <Text style={styles.detailPillValue} numberOfLines={1}>{value}</Text>
+    <View style={styles.applicationDetailsCard}>
+      <View style={styles.applicationDetailsHeader}>
+        <View style={styles.applicationDetailsIcon}>
+          <Ionicons name="document-text-outline" size={23} color="#14b8a6" />
+        </View>
+        <View style={styles.applicationDetailsCopy}>
+          <Text style={styles.applicationDetailsEyebrow}>Submitted Application</Text>
+          <Text style={styles.applicationDetailsTitle}>Details sent for verification</Text>
+        </View>
+        <TouchableOpacity style={styles.applicationDetailsClose} onPress={onClose} activeOpacity={0.86}>
+          <Ionicons name="close" size={18} color="#020617" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.applicationDetailsList}>
+        {details.map((item) => (
+          <ApplicationDetailRow key={item.label} {...item} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function ApplicationDetailRow({ icon, label, value }) {
+  return (
+    <View style={styles.applicationDetailRow}>
+      <View style={styles.applicationDetailIcon}>
+        <Ionicons name={icon} size={17} color="#14b8a6" />
+      </View>
+      <View style={styles.applicationDetailCopy}>
+        <Text style={styles.applicationDetailLabel}>{label}</Text>
+        <Text style={styles.applicationDetailValue}>{value}</Text>
       </View>
     </View>
   );
@@ -733,7 +773,7 @@ const fieldLabels = {
   degree: "Highest Academic Degree",
   experience: "Teaching Experience",
   subjects: "Core Subjects Offered",
-  hourlyRate: "Hourly Rate",
+  hourlyRate: "Monthly Rate",
   qualificationFileName: "Academic Qualification Certificate",
   qualificationFile: "Certificate File",
   server: "Server response",
@@ -921,21 +961,6 @@ const styles = StyleSheet.create({
   submittedEyebrow: { color: "#14b8a6", fontSize: 10, fontWeight: "900", letterSpacing: 1.6, textTransform: "uppercase" },
   submittedTitle: { color: "#020617", fontSize: 22, lineHeight: 27, fontWeight: "900", marginTop: 4 },
   submittedMessage: { color: "#475569", fontSize: 14, lineHeight: 22, fontWeight: "700" },
-  submittedDetails: { gap: 10 },
-  detailPill: {
-    minHeight: 56,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    backgroundColor: "#f8fafc",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 11,
-    paddingHorizontal: 13,
-  },
-  detailPillCopy: { flex: 1 },
-  detailPillLabel: { color: "#64748b", fontSize: 10, fontWeight: "900", textTransform: "uppercase", letterSpacing: 0.8 },
-  detailPillValue: { color: "#020617", fontSize: 13, fontWeight: "900", marginTop: 2 },
   submittedButton: {
     minHeight: 52,
     borderRadius: 16,
@@ -946,6 +971,85 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   submittedButtonText: { color: "#fff", fontSize: 14, fontWeight: "900" },
+  applicationDetailsCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#dbeafe",
+    backgroundColor: "#f8fafc",
+    padding: 16,
+    gap: 15,
+  },
+  applicationDetailsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  applicationDetailsIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: "#ccfbf1",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  applicationDetailsCopy: { flex: 1 },
+  applicationDetailsEyebrow: {
+    color: "#14b8a6",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
+  applicationDetailsTitle: {
+    color: "#020617",
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: "900",
+    marginTop: 3,
+  },
+  applicationDetailsClose: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#e2e8f0",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  applicationDetailsList: { gap: 10 },
+  applicationDetailRow: {
+    minHeight: 58,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 11,
+    padding: 13,
+  },
+  applicationDetailIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    backgroundColor: "rgba(20,184,166,0.10)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  applicationDetailCopy: { flex: 1 },
+  applicationDetailLabel: {
+    color: "#64748b",
+    fontSize: 10,
+    fontWeight: "900",
+    textTransform: "uppercase",
+    letterSpacing: 0.7,
+  },
+  applicationDetailValue: {
+    color: "#020617",
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "800",
+    marginTop: 3,
+  },
   formCard: {
     backgroundColor: Colors.surface,
     borderRadius: 18,

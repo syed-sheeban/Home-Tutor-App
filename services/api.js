@@ -19,16 +19,16 @@ const getExpoHost = () => {
 };
 
 const getLocalApiBaseUrl = () => {
-  const configuredUrl =
-    process.env.EXPO_PUBLIC_API_BASE_URL ||
-    Constants.expoConfig?.extra?.apiBaseUrl;
-
-  if (configuredUrl) return normalizeApiUrl(configuredUrl);
+  const envUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+  if (envUrl) return normalizeApiUrl(envUrl);
 
   const expoHost = getExpoHost();
   if (expoHost && !["localhost", "127.0.0.1"].includes(expoHost)) {
     return `http://${expoHost}:5000/api`;
   }
+
+  const configuredUrl = Constants.expoConfig?.extra?.apiBaseUrl;
+  if (configuredUrl) return normalizeApiUrl(configuredUrl);
 
   if (Platform.OS === "android") return "http://10.0.2.2:5000/api";
 

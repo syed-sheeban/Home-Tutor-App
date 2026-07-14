@@ -13,16 +13,16 @@ const getExpoHost = () => {
 };
 
 export const WEB_APP_BASE_URL = (() => {
-  const configuredUrl =
-    process.env.EXPO_PUBLIC_WEB_APP_BASE_URL ||
-    Constants.expoConfig?.extra?.webAppBaseUrl;
-
-  if (configuredUrl) return normalizeOrigin(configuredUrl);
+  const envUrl = process.env.EXPO_PUBLIC_WEB_APP_BASE_URL;
+  if (envUrl) return normalizeOrigin(envUrl);
 
   const expoHost = getExpoHost();
   if (expoHost && !["localhost", "127.0.0.1"].includes(expoHost)) {
     return `http://${expoHost}:5173`;
   }
+
+  const configuredUrl = Constants.expoConfig?.extra?.webAppBaseUrl;
+  if (configuredUrl) return normalizeOrigin(configuredUrl);
 
   if (Platform.OS === "android") return "http://10.0.2.2:5173";
 

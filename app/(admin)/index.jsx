@@ -481,7 +481,7 @@ function ReviewCard({ name, email, subjects, qualification, request, onApprove, 
       <View style={styles.reviewDetails}>
         <ReviewDetail icon="school-outline" label="Subjects" value={subjects} />
         <ReviewDetail icon="document-attach-outline" label="Qualification" value={qualification} />
-        <ReviewDetail icon="cash-outline" label="Rate" value={request.hourlyRate ? `Rs ${request.hourlyRate}/hr` : "Not added"} />
+        <ReviewDetail icon="cash-outline" label="Monthly Rate" value={request.hourlyRate ? `Rs ${request.hourlyRate} per month` : "Not added"} />
       </View>
 
       <View style={styles.reviewActions}>

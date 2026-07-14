@@ -9,11 +9,15 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hometutor.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.hometutor.apk",
-      "versionCode": 2,
+      "versionCode": 3,
       "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -48,8 +52,8 @@
       "reactCompiler": true
     },
     "extra": {
-      "apiBaseUrl": "http://192.168.1.22:5000/api",
-      "webAppBaseUrl": "http://192.168.1.22:5173",
+      "apiBaseUrl": "http://192.168.1.17:5000/api",
+      "webAppBaseUrl": "http://192.168.1.17:5173",
       "router": {},
       "eas": {
         "projectId": "d04f457e-4aa9-4fe5-93cf-30624a9134b8"

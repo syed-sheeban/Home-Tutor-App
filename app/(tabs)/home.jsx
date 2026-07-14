@@ -584,7 +584,7 @@ function ResultStat({ value, label }) {
 
 function FooterLink({ label, onPress }) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.82}>
+    <TouchableOpacity style={styles.footerLinkTouch} onPress={onPress} activeOpacity={0.82}>
       <Text style={styles.footerLink}>{label}</Text>
     </TouchableOpacity>
   );
@@ -593,7 +593,7 @@ function FooterLink({ label, onPress }) {
 function FooterContact({ icon, text }) {
   return (
     <View style={styles.footerContact}>
-      <Ionicons name={icon} size={16} color="rgba(255,255,255,0.42)" />
+      <Ionicons name={icon} size={17} color="rgba(255,255,255,0.78)" />
       <Text style={styles.footerContactText}>{text}</Text>
     </View>
   );
@@ -1323,7 +1323,7 @@ const styles = StyleSheet.create({
   },
   footerTop: { gap: 28, paddingBottom: 44, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.10)" },
   footerDarkTitle: { color: "#fff", fontSize: 34, lineHeight: 39, fontWeight: "900", marginTop: 18 },
-  footerDarkCopy: { color: "rgba(255,255,255,0.50)", fontSize: 15, lineHeight: 25, fontWeight: "600" },
+  footerDarkCopy: { color: "rgba(255,255,255,0.78)", fontSize: 15, lineHeight: 25, fontWeight: "700" },
   footerNewsletter: {
     marginTop: 18,
     borderRadius: 999,
@@ -1349,14 +1349,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#14b8a6",
   },
   footerBrandText: { color: "#fff", fontSize: 24, fontWeight: "900" },
-  footerBrandCopy: { color: "rgba(255,255,255,0.45)", fontSize: 14, lineHeight: 24, fontWeight: "600" },
-  footerColumn: { gap: 12 },
-  footerHeading: { color: "#fff", fontSize: 13, fontWeight: "900", letterSpacing: 1.7, textTransform: "uppercase", marginBottom: 4 },
-  footerLink: { color: "rgba(255,255,255,0.45)", fontSize: 14, fontWeight: "700" },
-  footerContact: { flexDirection: "row", alignItems: "center", gap: 10 },
-  footerContactText: { color: "rgba(255,255,255,0.45)", fontSize: 14, fontWeight: "700" },
-  footerBottom: { borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.10)", marginTop: 36, paddingTop: 22, gap: 16 },
-  footerBottomText: { color: "rgba(255,255,255,0.35)", fontSize: 12, fontWeight: "700" },
+  footerBrandCopy: { color: "rgba(255,255,255,0.76)", fontSize: 14, lineHeight: 24, fontWeight: "700" },
+  footerColumn: { gap: 10 },
+  footerHeading: { color: "#fff", fontSize: 13, fontWeight: "900", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 6 },
+  footerLinkTouch: { minHeight: 34, justifyContent: "center" },
+  footerLink: { color: "rgba(255,255,255,0.82)", fontSize: 15, lineHeight: 21, fontWeight: "800" },
+  footerContact: { minHeight: 34, flexDirection: "row", alignItems: "center", gap: 11 },
+  footerContactText: { color: "rgba(255,255,255,0.80)", fontSize: 15, lineHeight: 21, fontWeight: "800", flex: 1 },
+  footerBottom: { borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.14)", marginTop: 36, paddingTop: 22, gap: 16 },
+  footerBottomText: { color: "rgba(255,255,255,0.62)", fontSize: 12, lineHeight: 18, fontWeight: "800" },
   footerBottomLinks: { flexDirection: "row", flexWrap: "wrap", gap: 18 },
   footerBottomLink: { color: "rgba(255,255,255,0.42)", fontSize: 12, fontWeight: "700" },
   logoutBackdrop: { flex: 1, backgroundColor: "rgba(5,8,16,0.72)", alignItems: "center", justifyContent: "center", padding: 24 },

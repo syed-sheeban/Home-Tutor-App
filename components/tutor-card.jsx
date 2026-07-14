@@ -28,7 +28,7 @@ export function TutorCard({ tutor, onPress }) {
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>{tutor.location}</Text>
-        <Text style={styles.price}>₹{tutor.hourlyRate}/hr</Text>
+        <Text style={styles.price}>₹{tutor.hourlyRate} per month</Text>
       </View>
       <View style={styles.footer}>
         <Text style={styles.footerText}>{tutor.mode}</Text>
