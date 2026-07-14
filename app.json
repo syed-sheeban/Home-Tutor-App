@@ -52,7 +52,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "apiBaseUrl": "http://192.168.1.17:5000/api",
+      "apiBaseUrl": "https://backend-production-a779f.up.railway.app/api",
       "webAppBaseUrl": "http://192.168.1.17:5173",
       "router": {},
       "eas": {
