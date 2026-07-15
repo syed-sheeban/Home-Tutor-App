@@ -21,7 +21,7 @@ function addOneHour(value) {
   return `${String((hours + 1) % 24).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
-export default function TutorDashboard() {
+export default function TutorDashboard({ section = "overview" }) {
   const logout = useAuthStore((s) => s.logout);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -162,18 +162,19 @@ export default function TutorDashboard() {
       refreshing={refreshing}
       onRefresh={onRefresh}
       onLogout={logout}
+      activeNavigationIndex={["overview", "schedule", "students", "progress", "bookings", "reviews"].indexOf(section)}
       navigation={[
-        { label: "Overview", description: "Teaching snapshot", icon: "grid-outline", index: 0 },
-        { label: "Schedule", description: "Classes and proposals", icon: "calendar-outline", index: 3 },
-        { label: "Students", description: "Learning roster", icon: "people-outline", index: 4 },
-        { label: "Progress", description: "Send learning updates", icon: "trending-up-outline", index: 7 },
-        { label: "Bookings", description: "New student requests", icon: "notifications-outline", index: 5 },
-        { label: "Reviews", description: "Teaching feedback", icon: "star-outline", index: 8 },
+        { label: "Overview", icon: "grid-outline", href: "/(tutor)" },
+        { label: "Schedule", icon: "calendar-outline", href: "/(tutor)/schedule" },
+        { label: "Students", icon: "people-outline", href: "/(tutor)/students" },
+        { label: "Progress", icon: "trending-up-outline", href: "/(tutor)/progress" },
+        { label: "Bookings", icon: "notifications-outline", href: "/(tutor)/bookings" },
+        { label: "Reviews", icon: "star-outline", href: "/(tutor)/reviews" },
       ]}
     >
-      <StatGrid stats={stats} />
+      {section === "overview" && <StatGrid stats={stats} />}
 
-      <SectionCard title="Verification Status" eyebrow="Profile" icon="shield-checkmark-outline">
+      {section === "overview" && <SectionCard title="Verification Status" eyebrow="Profile" icon="shield-checkmark-outline">
         <ListRow
           icon="ribbon-outline"
           title={status === "APPROVED" ? "Verified Tutor" : "Tutor profile under review"}
@@ -181,9 +182,9 @@ export default function TutorDashboard() {
           badge={status}
           tone={getStatusTone(status)}
         />
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Availability" eyebrow="Tutor Card Status" icon="radio-button-on-outline">
+      {section === "overview" && <SectionCard title="Availability" eyebrow="Tutor Card Status" icon="radio-button-on-outline">
         <View style={styles.availabilityPanel}>
           <View style={styles.availabilityCopy}>
             <Text style={styles.availabilityTitle}>
@@ -214,9 +215,9 @@ export default function TutorDashboard() {
             })}
           </View>
         </View>
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Scheduled Classes" eyebrow="Schedule" icon="calendar-outline">
+      {section === "schedule" && <SectionCard title="Scheduled Classes" eyebrow="Schedule" icon="calendar-outline">
         {sessions.length ? (
           sessions.map((session, index) => (
             <ListRow
@@ -239,9 +240,9 @@ export default function TutorDashboard() {
             tone={getStatusTone(session.status)}
           />
         ))}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Students" eyebrow="Roster" icon="people-outline">
+      {section === "students" && <SectionCard title="Students" eyebrow="Roster" icon="people-outline">
         {students.length ? (
           students.map((student, index) => (
             <ListRow
@@ -254,9 +255,9 @@ export default function TutorDashboard() {
         ) : (
           <EmptyState label="Accepted students will appear here." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Booking Requests" eyebrow="Activity" icon="notifications-outline">
+      {section === "bookings" && <SectionCard title="Booking Requests" eyebrow="Activity" icon="notifications-outline">
         {requests.length ? (
           requests.map((request) => (
             <ListRow
@@ -289,9 +290,9 @@ export default function TutorDashboard() {
         ) : (
           <EmptyState label="No pending booking requests." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Set Class Schedule" eyebrow="Accepted Students" icon="calendar-number-outline">
+      {section === "schedule" && <SectionCard title="Set Class Schedule" eyebrow="Accepted Students" icon="calendar-number-outline">
         {scheduleQueue.length ? (
           scheduleQueue.map((request) => (
             <ListRow
@@ -314,9 +315,9 @@ export default function TutorDashboard() {
         ) : (
           <EmptyState label="No accepted requests waiting for schedule." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Send Progress Updates" eyebrow="Parent + Student" icon="chatbox-ellipses-outline">
+      {section === "progress" && <SectionCard title="Send Progress Updates" eyebrow="Parent + Student" icon="chatbox-ellipses-outline">
         {students.length ? (
           students.map((student) => (
             <ListRow
@@ -348,9 +349,9 @@ export default function TutorDashboard() {
             meta={update.student?.user?.fullName || "Student"}
           />
         ))}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Reviews" eyebrow="Performance" icon="star-outline">
+      {section === "reviews" && <SectionCard title="Reviews" eyebrow="Performance" icon="star-outline">
         {reviews.length ? (
           reviews.slice(0, 5).map((review) => (
             <ListRow
@@ -364,7 +365,7 @@ export default function TutorDashboard() {
         ) : (
           <EmptyState label="Reviews will appear after completed sessions." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
       <TutorEditor
         editor={editor}
@@ -394,6 +395,7 @@ export default function TutorDashboard() {
     </DashboardShell>
   );
 }
+
 
 function TutorEditor({ editor, setEditor, onSchedule, onProgress }) {
   if (!editor) return null;

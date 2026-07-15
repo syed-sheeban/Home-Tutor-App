@@ -15,7 +15,7 @@ import {
 
 const EMPTY = [];
 
-export default function ParentDashboard() {
+export default function ParentDashboard({ section = "overview" }) {
   const logout = useAuthStore((s) => s.logout);
   const [data, setData] = useState(null);
   const [tutors, setTutors] = useState([]);
@@ -86,17 +86,18 @@ export default function ParentDashboard() {
       refreshing={refreshing}
       onRefresh={onRefresh}
       onLogout={logout}
+      activeNavigationIndex={["overview", "progress", "sessions", "bookings", "reports"].indexOf(section)}
       navigation={[
-        { label: "Overview", description: "Learning snapshot", icon: "grid-outline", index: 0 },
-        { label: "Progress", description: "Tutor updates", icon: "trending-up-outline", index: 1 },
-        { label: "Sessions", description: "Upcoming timetable", icon: "calendar-outline", index: 2 },
-        { label: "Bookings", description: "Requests and history", icon: "document-text-outline", index: 4 },
-        { label: "Reports", description: "Feedback and notes", icon: "book-outline", index: 5 },
+        { label: "Overview", icon: "grid-outline", href: "/(parent)" },
+        { label: "Progress", icon: "trending-up-outline", href: "/(parent)/progress" },
+        { label: "Sessions", icon: "calendar-outline", href: "/(parent)/sessions" },
+        { label: "Bookings", icon: "document-text-outline", href: "/(parent)/bookings" },
+        { label: "Reports", icon: "book-outline", href: "/(parent)/reports" },
       ]}
     >
-      <StatGrid stats={statItems} />
+      {section === "overview" && <StatGrid stats={statItems} />}
 
-      <SectionCard title="Tutor Progress Journal" eyebrow="Learning" icon="trending-up-outline">
+      {section === "progress" && <SectionCard title="Tutor Progress Journal" eyebrow="Learning" icon="trending-up-outline">
         {progressUpdates.length ? (
           progressUpdates.map((item) => (
             <ListRow
@@ -110,9 +111,9 @@ export default function ParentDashboard() {
         ) : (
           <EmptyState label="Tutor progress updates will appear here after your child's tutor writes them." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Upcoming Sessions" eyebrow="Schedule" icon="calendar-outline">
+      {section === "sessions" && <SectionCard title="Upcoming Sessions" eyebrow="Schedule" icon="calendar-outline">
         {sessions.length ? (
           sessions.map((session) => (
             <ListRow
@@ -128,9 +129,9 @@ export default function ParentDashboard() {
         ) : (
           <EmptyState label="No scheduled sessions yet." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Tutor Information" eyebrow="Verified Tutors" icon="people-outline">
+      {section === "overview" && <SectionCard title="Tutor Information" eyebrow="Verified Tutors" icon="people-outline">
         {tutors.length ? (
           tutors.slice(0, 5).map((tutor) => (
             <ListRow
@@ -144,9 +145,9 @@ export default function ParentDashboard() {
         ) : (
           <EmptyState label="Verified tutor suggestions will appear here." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Booking History" eyebrow="Requests" icon="document-text-outline">
+      {section === "bookings" && <SectionCard title="Booking History" eyebrow="Requests" icon="document-text-outline">
         {bookings.length ? (
           bookings.map((booking) => (
             <ListRow
@@ -162,9 +163,9 @@ export default function ParentDashboard() {
         ) : (
           <EmptyState label="No booking history yet." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Reports" eyebrow="Bookings & Feedback" icon="document-text-outline">
+      {section === "reports" && <SectionCard title="Reports" eyebrow="Bookings & Feedback" icon="document-text-outline">
         {reviews.slice(0, 2).map((review) => (
           <ListRow
             key={review.id}
@@ -183,7 +184,7 @@ export default function ParentDashboard() {
           />
         ))}
         {!reviews.length && !notes.length && <EmptyState label="Feedback appears after tutor activity." />}
-      </SectionCard>
+      </SectionCard>}
       <PremiumFeedbackModal
         visible={!!feedback}
         type={feedback?.type}

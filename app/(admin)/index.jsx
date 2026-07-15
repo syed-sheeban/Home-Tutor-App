@@ -16,7 +16,7 @@ import {
 } from "../../components/dashboard-kit";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ section = "overview" }) {
   const logout = useAuthStore((s) => s.logout);
   const [requests, setRequests] = useState([]);
   const [users, setUsers] = useState([]);
@@ -255,17 +255,18 @@ export default function AdminDashboard() {
       refreshing={refreshing}
       onRefresh={onRefresh}
       onLogout={logout}
+      activeNavigationIndex={["overview", "approvals", "users", "notifications", "reviews"].indexOf(section)}
       navigation={[
-        { label: "Overview", description: "Platform snapshot", icon: "grid-outline", index: 0 },
-        { label: "Tutor approvals", description: "Review applications", icon: "shield-checkmark-outline", index: 3 },
-        { label: "User directory", description: "Parents, students, tutors", icon: "people-outline", index: 5 },
-        { label: "Notifications", description: "Platform messaging", icon: "megaphone-outline", index: 2 },
-        { label: "Reviews", description: "Tutor feedback", icon: "star-outline", index: 6 },
+        { label: "Overview", icon: "grid-outline", href: "/(admin)" },
+        { label: "Tutor approvals", icon: "shield-checkmark-outline", href: "/(admin)/approvals" },
+        { label: "User directory", icon: "people-outline", href: "/(admin)/users" },
+        { label: "Notifications", icon: "megaphone-outline", href: "/(admin)/notifications" },
+        { label: "Reviews", icon: "star-outline", href: "/(admin)/reviews" },
       ]}
     >
-      <StatGrid stats={statItems} />
+      {section === "overview" && <StatGrid stats={statItems} />}
 
-      <SectionCard title="Admin Action Center" eyebrow="Needs Attention" icon="notifications-outline">
+      {section === "overview" && <SectionCard title="Admin Action Center" eyebrow="Needs Attention" icon="notifications-outline">
         <View style={styles.actionSummary}>
           <ActionMetric icon="time-outline" label="Waiting Review" value={pendingRequests.length} tone="warning" />
           <ActionMetric icon="checkmark-done-outline" label="Approved" value={stats.totalTutors || approvedRequests.length} tone="success" />
@@ -286,9 +287,9 @@ export default function AdminDashboard() {
             </Text>
           </View>
         </View>
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Notification Handler" eyebrow="Platform Messaging" icon="megaphone-outline">
+      {section === "notifications" && <SectionCard title="Notification Handler" eyebrow="Platform Messaging" icon="megaphone-outline">
         <View style={styles.notificationStats}>
           <ActionMetric icon="megaphone-outline" label="Total" value={notificationStats.total || notifications.length} tone="success" />
           <ActionMetric icon="time-outline" label="Scheduled" value={notificationStats.scheduled || 0} tone="warning" />
@@ -357,9 +358,9 @@ export default function AdminDashboard() {
           />
         ))}
         {!notifications.length && <EmptyState label="No notification history yet." />}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Pending Tutor Approvals" eyebrow="Action Queue" icon="checkmark-done-outline">
+      {section === "approvals" && <SectionCard title="Pending Tutor Approvals" eyebrow="Action Queue" icon="checkmark-done-outline">
         {pendingRequests.length ? (
           pendingRequests.map((request) => (
             <ReviewCard
@@ -377,9 +378,9 @@ export default function AdminDashboard() {
         ) : (
           <EmptyState label="No pending tutor applications." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Completed Reviews" eyebrow="What You Have Done" icon="checkmark-circle-outline">
+      {section === "approvals" && <SectionCard title="Completed Reviews" eyebrow="What You Have Done" icon="checkmark-circle-outline">
         {completedReviews.length ? (
           completedReviews.map((request) => (
             <DecisionRow
@@ -393,9 +394,9 @@ export default function AdminDashboard() {
         ) : (
           <EmptyState label="Approved and rejected tutor applications will appear here." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Users Overview" eyebrow="Accounts" icon="people-outline">
+      {section === "users" && <SectionCard title="Users Overview" eyebrow="Accounts" icon="people-outline">
         <ListRow icon="people-outline" title="Parents" subtitle="Registered parent accounts" meta={parents.length} onPress={() => { setUserFilter("PARENT"); setUserDirectoryOpen(true); }} />
         <ListRow icon="school-outline" title="Students" subtitle="Registered student accounts" meta={students.length} onPress={() => { setUserFilter("STUDENT"); setUserDirectoryOpen(true); }} />
         <ListRow icon="briefcase-outline" title="Tutors" subtitle="All tutor accounts" meta={tutors.length} onPress={() => { setUserFilter("TUTOR"); setUserDirectoryOpen(true); }} />
@@ -404,9 +405,9 @@ export default function AdminDashboard() {
           <Text style={styles.directoryButtonText}>View all user details</Text>
           <Ionicons name="arrow-forward" size={17} color="#fff" />
         </TouchableOpacity>
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Reviews & Ratings" eyebrow="Tutor Performance" icon="star-outline">
+      {section === "reviews" && <SectionCard title="Reviews & Ratings" eyebrow="Tutor Performance" icon="star-outline">
         {reviews.length ? (
           reviews.flatMap((group) =>
             group.reviews.map((review) => (
@@ -423,9 +424,9 @@ export default function AdminDashboard() {
         ) : (
           <EmptyState label="No tutor reviews have been submitted." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Tutor Applications Overview" eyebrow="All Requests" icon="calendar-outline">
+      {section === "approvals" && <SectionCard title="Tutor Applications Overview" eyebrow="All Requests" icon="calendar-outline">
         {requests.length ? (
           requests.slice(0, 8).map((request) => (
             <ListRow
@@ -440,7 +441,7 @@ export default function AdminDashboard() {
         ) : (
           <EmptyState label="Tutor applications will appear here." />
         )}
-      </SectionCard>
+      </SectionCard>}
       <ReviewDecisionModal
         visible={!!reviewModal}
         review={reviewModal}
@@ -485,6 +486,7 @@ export default function AdminDashboard() {
     </DashboardShell>
   );
 }
+
 
 function UserDirectoryModal({ visible, users, filter, onFilter, onClose, onSelect }) {
   const filters = ["ALL", "TUTOR", "STUDENT", "PARENT"];

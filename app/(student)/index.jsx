@@ -15,7 +15,7 @@ import {
 
 const EMPTY = [];
 
-export default function StudentDashboard() {
+export default function StudentDashboard({ section = "overview" }) {
   const logout = useAuthStore((s) => s.logout);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -111,17 +111,18 @@ export default function StudentDashboard() {
         refreshing={refreshing}
         onRefresh={onRefresh}
         onLogout={logout}
+        activeNavigationIndex={["overview", "schedule", "tutors", "progress", "reviews"].indexOf(section)}
         navigation={[
-          { label: "Overview", description: "Learning snapshot", icon: "grid-outline", index: 0 },
-          { label: "Schedule", description: "Classes and proposals", icon: "calendar-outline", index: 3 },
-          { label: "Tutors", description: "Your mentor team", icon: "people-outline", index: 6 },
-          { label: "Progress", description: "Tutor progress journal", icon: "trending-up-outline", index: 2 },
-          { label: "Reviews", description: "Rate completed classes", icon: "star-outline", index: 7 },
+          { label: "Overview", icon: "grid-outline", href: "/(student)" },
+          { label: "Schedule", icon: "calendar-outline", href: "/(student)/schedule" },
+          { label: "Tutors", icon: "people-outline", href: "/(student)/tutors" },
+          { label: "Progress", icon: "trending-up-outline", href: "/(student)/progress" },
+          { label: "Reviews", icon: "star-outline", href: "/(student)/reviews" },
         ]}
       >
-        <StatGrid stats={statItems} />
+        {section === "overview" && <StatGrid stats={statItems} />}
 
-      <SectionCard title="Next Class" eyebrow="Focus" icon="calendar-number-outline">
+      {section === "overview" && <SectionCard title="Next Class" eyebrow="Focus" icon="calendar-number-outline">
         {nextClass ? (
           <ListRow
             icon="school-outline"
@@ -134,9 +135,9 @@ export default function StudentDashboard() {
         ) : (
           <EmptyState label="Your upcoming classes will appear once a tutor schedules them." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Tutor Progress Journal" eyebrow="Learning Focus" icon="trending-up-outline">
+      {section === "progress" && <SectionCard title="Tutor Progress Journal" eyebrow="Learning Focus" icon="trending-up-outline">
         {latestProgress && (
           <View style={styles.featureCard}>
             <Text style={styles.featureEyebrow}>{latestProgress.subject || "Latest update"}</Text>
@@ -158,9 +159,9 @@ export default function StudentDashboard() {
         ) : (
           <EmptyState label="Tutor-written progress updates will appear here." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Upcoming Sessions" eyebrow="Schedule" icon="time-outline">
+      {section === "schedule" && <SectionCard title="Upcoming Sessions" eyebrow="Schedule" icon="time-outline">
         {sessions.length ? (
           sessions.map((session) => (
             <ListRow
@@ -175,9 +176,9 @@ export default function StudentDashboard() {
         ) : (
           <EmptyState label="No scheduled classes yet." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Schedule Proposals" eyebrow="Needs Your Decision" icon="mail-unread-outline">
+      {section === "schedule" && <SectionCard title="Schedule Proposals" eyebrow="Needs Your Decision" icon="mail-unread-outline">
         {proposals.length ? (
           proposals.map((proposal) => (
             <ListRow
@@ -193,9 +194,9 @@ export default function StudentDashboard() {
         ) : (
           <EmptyState label="No schedule proposals need your response." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Completed Classes" eyebrow="History" icon="checkmark-done-outline">
+      {section === "schedule" && <SectionCard title="Completed Classes" eyebrow="History" icon="checkmark-done-outline">
         {completed.length ? (
           completed.map((session) => (
             <ListRow
@@ -211,9 +212,9 @@ export default function StudentDashboard() {
         ) : (
           <EmptyState label="Completed classes will appear here." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Assigned Tutors" eyebrow="Mentors" icon="people-outline">
+      {section === "tutors" && <SectionCard title="Assigned Tutors" eyebrow="Mentors" icon="people-outline">
         {tutors.length ? (
           tutors.map((tutor) => (
             <ListRow
@@ -237,9 +238,9 @@ export default function StudentDashboard() {
         ) : (
           <EmptyState label="Accepted tutors will appear here." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
-      <SectionCard title="Your Tutor Feedback" eyebrow="Reviews" icon="star-outline">
+      {section === "reviews" && <SectionCard title="Your Tutor Feedback" eyebrow="Reviews" icon="star-outline">
         {savedReviews.length ? (
           savedReviews.map((tutor) => (
             <ListRow
@@ -254,7 +255,7 @@ export default function StudentDashboard() {
         ) : (
           <EmptyState label="Your submitted tutor feedback will appear here." />
         )}
-      </SectionCard>
+      </SectionCard>}
 
       </DashboardShell>
 
@@ -274,6 +275,7 @@ export default function StudentDashboard() {
     </>
   );
 }
+
 
 function formatDate(value) {
   if (!value) return "Not recorded";

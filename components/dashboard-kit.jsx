@@ -1,5 +1,6 @@
 import { FlatList, Modal, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { useRef, useState } from "react";
@@ -31,16 +32,21 @@ const C = {
   roseText: "#be123c",
 };
 
-export function DashboardShell({ title, subtitle, icon, children, refreshing, onRefresh, onLogout, navigation = [] }) {
+export function DashboardShell({ title, subtitle, icon, children, refreshing, onRefresh, onLogout, navigation = [], activeNavigationIndex: initialNavigationIndex = 0 }) {
   const sections = Array.isArray(children) ? children.filter(Boolean) : [children].filter(Boolean);
   const [logoutPrompt, setLogoutPrompt] = useState(false);
   const [logoutDone, setLogoutDone] = useState(false);
-  const [activeNavigationIndex, setActiveNavigationIndex] = useState(0);
+  const [activeNavigationIndex, setActiveNavigationIndex] = useState(initialNavigationIndex);
   const listRef = useRef(null);
+  const router = useRouter();
 
-  const navigateTo = (index, navigationIndex) => {
+  const navigateTo = (item, navigationIndex) => {
     setActiveNavigationIndex(navigationIndex);
-    listRef.current?.scrollToIndex({ index: Math.max(0, index || 0), animated: true, viewPosition: 0.06 });
+    if (item.href) {
+      router.push(item.href);
+      return;
+    }
+    listRef.current?.scrollToIndex({ index: Math.max(0, item.index || 0), animated: true, viewPosition: 0.06 });
   };
 
   const confirmLogout = async () => {
@@ -85,7 +91,7 @@ export function DashboardShell({ title, subtitle, icon, children, refreshing, on
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.portalNav}>
                 {navigation.map((item, index) => {
                   const active = index === activeNavigationIndex;
-                  return <TouchableOpacity key={item.label} style={[styles.portalNavItem, active && styles.portalNavItemActive]} onPress={() => navigateTo(item.index, index)} activeOpacity={0.84}>
+                  return <TouchableOpacity key={item.label} style={[styles.portalNavItem, active && styles.portalNavItemActive]} onPress={() => navigateTo(item, index)} activeOpacity={0.84}>
                     <Ionicons name={item.icon || "grid-outline"} size={14} color={active ? "#0f766e" : "#64748b"} />
                     <Text style={[styles.portalNavText, active && styles.portalNavTextActive]}>{item.label}</Text>
                   </TouchableOpacity>
