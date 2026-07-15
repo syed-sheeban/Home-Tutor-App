@@ -58,6 +58,7 @@ export default function StudentDashboard() {
   const progressUpdates = data?.progressUpdates || EMPTY;
   const latestProgress = progressUpdates[0];
   const tutors = data?.tutors || EMPTY;
+  const savedReviews = tutors.filter((tutor) => tutor.review);
   const nextClass = sessions[0];
 
   const statItems = useMemo(
@@ -110,6 +111,13 @@ export default function StudentDashboard() {
         refreshing={refreshing}
         onRefresh={onRefresh}
         onLogout={logout}
+        navigation={[
+          { label: "Overview", description: "Learning snapshot", icon: "grid-outline", index: 0 },
+          { label: "Schedule", description: "Classes and proposals", icon: "calendar-outline", index: 3 },
+          { label: "Tutors", description: "Your mentor team", icon: "people-outline", index: 6 },
+          { label: "Progress", description: "Tutor progress journal", icon: "trending-up-outline", index: 2 },
+          { label: "Reviews", description: "Rate completed classes", icon: "star-outline", index: 7 },
+        ]}
       >
         <StatGrid stats={statItems} />
 
@@ -228,6 +236,23 @@ export default function StudentDashboard() {
           ))
         ) : (
           <EmptyState label="Accepted tutors will appear here." />
+        )}
+      </SectionCard>
+
+      <SectionCard title="Your Tutor Feedback" eyebrow="Reviews" icon="star-outline">
+        {savedReviews.length ? (
+          savedReviews.map((tutor) => (
+            <ListRow
+              key={`review-${tutor.id || tutor.name}`}
+              icon="star-outline"
+              title={tutor.name || "Tutor"}
+              subtitle={tutor.review?.text || "Feedback saved"}
+              meta={`${tutor.review?.rating || 0}/5`}
+              onPress={() => setActionModal({ type: "review", tutor, rating: String(tutor.review?.rating || 5), text: tutor.review?.text || "" })}
+            />
+          ))
+        ) : (
+          <EmptyState label="Your submitted tutor feedback will appear here." />
         )}
       </SectionCard>
 

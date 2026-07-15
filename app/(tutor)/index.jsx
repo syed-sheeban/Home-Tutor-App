@@ -162,6 +162,14 @@ export default function TutorDashboard() {
       refreshing={refreshing}
       onRefresh={onRefresh}
       onLogout={logout}
+      navigation={[
+        { label: "Overview", description: "Teaching snapshot", icon: "grid-outline", index: 0 },
+        { label: "Schedule", description: "Classes and proposals", icon: "calendar-outline", index: 3 },
+        { label: "Students", description: "Learning roster", icon: "people-outline", index: 4 },
+        { label: "Progress", description: "Send learning updates", icon: "trending-up-outline", index: 7 },
+        { label: "Bookings", description: "New student requests", icon: "notifications-outline", index: 5 },
+        { label: "Reviews", description: "Teaching feedback", icon: "star-outline", index: 8 },
+      ]}
     >
       <StatGrid stats={stats} />
 

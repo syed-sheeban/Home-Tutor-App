@@ -86,6 +86,13 @@ export default function ParentDashboard() {
       refreshing={refreshing}
       onRefresh={onRefresh}
       onLogout={logout}
+      navigation={[
+        { label: "Overview", description: "Learning snapshot", icon: "grid-outline", index: 0 },
+        { label: "Progress", description: "Tutor updates", icon: "trending-up-outline", index: 1 },
+        { label: "Sessions", description: "Upcoming timetable", icon: "calendar-outline", index: 2 },
+        { label: "Bookings", description: "Requests and history", icon: "document-text-outline", index: 4 },
+        { label: "Reports", description: "Feedback and notes", icon: "book-outline", index: 5 },
+      ]}
     >
       <StatGrid stats={statItems} />
 

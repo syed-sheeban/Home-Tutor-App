@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { WebView } from "react-native-webview";
 import useAuthStore from "../../store/authStore";
 import { adminService } from "../../services/adminService";
+import { API_BASE_URL } from "../../services/api";
 import {
   Badge,
   DashboardShell,
@@ -38,6 +40,10 @@ export default function AdminDashboard() {
   const [resultModal, setResultModal] = useState(null);
   const [reviewDeletePrompt, setReviewDeletePrompt] = useState(null);
   const [processingReview, setProcessingReview] = useState(false);
+  const [userDirectoryOpen, setUserDirectoryOpen] = useState(false);
+  const [userFilter, setUserFilter] = useState("ALL");
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [documentTutor, setDocumentTutor] = useState(null);
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -91,6 +97,7 @@ export default function AdminDashboard() {
   const students = users.filter((user) => user.role === "STUDENT");
   const tutors = users.filter((user) => user.role === "TUTOR");
   const parents = users.filter((user) => user.role === "PARENT");
+  const visibleUsers = users.filter((user) => userFilter === "ALL" || user.role === userFilter);
 
   const statItems = useMemo(
     () => [
@@ -248,6 +255,13 @@ export default function AdminDashboard() {
       refreshing={refreshing}
       onRefresh={onRefresh}
       onLogout={logout}
+      navigation={[
+        { label: "Overview", description: "Platform snapshot", icon: "grid-outline", index: 0 },
+        { label: "Tutor approvals", description: "Review applications", icon: "shield-checkmark-outline", index: 3 },
+        { label: "User directory", description: "Parents, students, tutors", icon: "people-outline", index: 5 },
+        { label: "Notifications", description: "Platform messaging", icon: "megaphone-outline", index: 2 },
+        { label: "Reviews", description: "Tutor feedback", icon: "star-outline", index: 6 },
+      ]}
     >
       <StatGrid stats={statItems} />
 
@@ -357,6 +371,7 @@ export default function AdminDashboard() {
               qualification={getTutorQualification(request)}
               onApprove={() => confirmTutorAction(request, "approve")}
               onReject={() => confirmTutorAction(request, "reject")}
+              onViewDocument={() => setDocumentTutor(request)}
             />
           ))
         ) : (
@@ -381,9 +396,14 @@ export default function AdminDashboard() {
       </SectionCard>
 
       <SectionCard title="Users Overview" eyebrow="Accounts" icon="people-outline">
-        <ListRow icon="people-outline" title="Parents" subtitle="Registered parent accounts" meta={parents.length} />
-        <ListRow icon="school-outline" title="Students" subtitle="Registered student accounts" meta={students.length} />
-        <ListRow icon="briefcase-outline" title="Tutors" subtitle="All tutor accounts" meta={tutors.length} />
+        <ListRow icon="people-outline" title="Parents" subtitle="Registered parent accounts" meta={parents.length} onPress={() => { setUserFilter("PARENT"); setUserDirectoryOpen(true); }} />
+        <ListRow icon="school-outline" title="Students" subtitle="Registered student accounts" meta={students.length} onPress={() => { setUserFilter("STUDENT"); setUserDirectoryOpen(true); }} />
+        <ListRow icon="briefcase-outline" title="Tutors" subtitle="All tutor accounts" meta={tutors.length} onPress={() => { setUserFilter("TUTOR"); setUserDirectoryOpen(true); }} />
+        <TouchableOpacity style={styles.directoryButton} onPress={() => { setUserFilter("ALL"); setUserDirectoryOpen(true); }} activeOpacity={0.86}>
+          <Ionicons name="people-outline" size={18} color="#fff" />
+          <Text style={styles.directoryButtonText}>View all user details</Text>
+          <Ionicons name="arrow-forward" size={17} color="#fff" />
+        </TouchableOpacity>
       </SectionCard>
 
       <SectionCard title="Reviews & Ratings" eyebrow="Tutor Performance" icon="star-outline">
@@ -445,7 +465,135 @@ export default function AdminDashboard() {
         onClose={() => setReviewDeletePrompt(null)}
         onConfirm={confirmRemoveStudentReview}
       />
+      <UserDirectoryModal
+        visible={userDirectoryOpen}
+        users={visibleUsers}
+        filter={userFilter}
+        onFilter={setUserFilter}
+        onClose={() => setUserDirectoryOpen(false)}
+        onSelect={setSelectedUser}
+      />
+      <UserDetailsModal
+        user={selectedUser}
+        onClose={() => setSelectedUser(null)}
+        onViewDocument={(tutor) => setDocumentTutor(tutor)}
+      />
+      <TutorDocumentModal
+        tutor={documentTutor}
+        onClose={() => setDocumentTutor(null)}
+      />
     </DashboardShell>
+  );
+}
+
+function UserDirectoryModal({ visible, users, filter, onFilter, onClose, onSelect }) {
+  const filters = ["ALL", "TUTOR", "STUDENT", "PARENT"];
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <View style={styles.directoryScreen}>
+        <View style={styles.directoryHeader}>
+          <View>
+            <Text style={styles.directoryEyebrow}>USER MANAGEMENT</Text>
+            <Text style={styles.directoryTitle}>Platform directory</Text>
+            <Text style={styles.directorySubtitle}>{users.length} profile{users.length === 1 ? "" : "s"} shown</Text>
+          </View>
+          <TouchableOpacity style={styles.closeRoundButton} onPress={onClose} accessibilityLabel="Close user directory">
+            <Ionicons name="close" size={22} color="#0f172a" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.filterRow}>
+          {filters.map((item) => (
+            <TouchableOpacity key={item} style={[styles.filterChip, filter === item && styles.filterChipActive]} onPress={() => onFilter(item)}>
+              <Text style={[styles.filterChipText, filter === item && styles.filterChipTextActive]}>{item === "ALL" ? "All" : `${item[0]}${item.slice(1).toLowerCase()}s`}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <ScrollView contentContainerStyle={styles.directoryList} showsVerticalScrollIndicator={false}>
+          {users.map((user) => <UserDirectoryRow key={user.id} user={user} onPress={() => onSelect(user)} />)}
+          {!users.length && <EmptyState label="No user profiles match this filter." />}
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
+function UserDirectoryRow({ user, onPress }) {
+  const tutor = user.tutor;
+  const status = user.role === "TUTOR" ? tutor?.verificationStatus || "PENDING" : "ACTIVE";
+  const detail = user.role === "TUTOR" ? tutor?.mainSubject || "Tutor profile" : user.role === "STUDENT" ? user.student?.classGrade || "Student profile" : user.parent?.phone || "Parent profile";
+  return (
+    <TouchableOpacity style={styles.userRow} onPress={onPress} activeOpacity={0.84}>
+      <View style={styles.userAvatar}><Text style={styles.userAvatarText}>{(user.fullName || "U").charAt(0).toUpperCase()}</Text></View>
+      <View style={styles.userCopy}>
+        <Text style={styles.userName}>{user.fullName || "Unnamed user"}</Text>
+        <Text style={styles.userEmail} numberOfLines={1}>{user.email || "No email recorded"}</Text>
+        <Text style={styles.userDetail}>{detail}</Text>
+      </View>
+      <View style={styles.userRowEnd}>
+        <Badge label={status} tone={getStatusTone(status)} />
+        <Ionicons name="chevron-forward" size={18} color="#64748b" />
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+function UserDetailsModal({ user, onClose, onViewDocument }) {
+  if (!user) return null;
+  const tutor = user.tutor;
+  const student = user.student;
+  const parent = user.parent;
+  const role = user.role || "USER";
+  const fields = role === "TUTOR"
+    ? [["Subjects", tutor?.subjects?.map((subject) => subject.subject || subject.name || subject).filter(Boolean).join(", ") || tutor?.mainSubject || "Not added"], ["Qualification", tutor?.degree || "Not added"], ["Experience", tutor?.experience || "Not added"], ["Phone", tutor?.phone || "Not added"], ["Location", tutor?.locationName || "Not added"], ["Teaching fee", tutor?.hourlyRate ? `Rs ${tutor.hourlyRate} / hour` : "Not added"], ["Verification", tutor?.verificationStatus || "PENDING"]]
+    : role === "STUDENT"
+      ? [["Class / grade", student?.classGrade || "Not added"], ["Learning need", student?.learningNeed || "Not added"], ["Phone", student?.phone || "Not added"], ["Parent contact", student?.parentContactNumber || "Not added"]]
+      : [["Phone", parent?.phone || "Not added"], ["Joined", user.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN") : "Not recorded"]];
+  const status = role === "TUTOR" ? tutor?.verificationStatus || "PENDING" : "ACTIVE";
+
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalBackdrop}>
+        <View style={styles.profileModal}>
+          <TouchableOpacity style={styles.profileClose} onPress={onClose} accessibilityLabel="Close profile details"><Ionicons name="close" size={20} color="#0f172a" /></TouchableOpacity>
+          <View style={styles.profileHero}>
+            <View style={styles.profileAvatar}><Text style={styles.profileAvatarText}>{(user.fullName || "U").charAt(0).toUpperCase()}</Text></View>
+            <Text style={styles.profileRole}>{role}</Text>
+            <Text style={styles.profileName}>{user.fullName || "Unnamed user"}</Text>
+            <Text style={styles.profileEmail}>{user.email || "No email recorded"}</Text>
+            <Badge label={status} tone={getStatusTone(status)} />
+          </View>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.profileScroll}>
+            <Text style={styles.profileSectionLabel}>PROFILE DETAILS</Text>
+            {fields.map(([label, value]) => <View key={label} style={styles.profileField}><Text style={styles.profileFieldLabel}>{label}</Text><Text style={styles.profileFieldValue}>{value}</Text></View>)}
+            {role === "TUTOR" && (
+              <View style={styles.documentCard}>
+                <View style={styles.documentIcon}><Ionicons name="document-text-outline" size={23} color="#0f766e" /></View>
+                <View style={styles.documentCopy}><Text style={styles.documentTitle}>Academic document</Text><Text style={styles.documentName} numberOfLines={1}>{tutor?.qualificationFileName || "No certificate uploaded"}</Text></View>
+                {!!tutor?.qualificationFileName && <TouchableOpacity style={styles.documentButton} onPress={() => onViewDocument(tutor)}><Ionicons name="eye-outline" size={17} color="#fff" /><Text style={styles.documentButtonText}>View</Text></TouchableOpacity>}
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function TutorDocumentModal({ tutor, onClose }) {
+  const token = useAuthStore((state) => state.token);
+  if (!tutor) return null;
+  const documentUrl = `${API_BASE_URL}/admin/tutor-documents/${tutor.id}/view`;
+  return (
+    <Modal visible animationType="slide" onRequestClose={onClose}>
+      <View style={styles.documentScreen}>
+        <View style={styles.documentHeader}><View><Text style={styles.directoryEyebrow}>SECURE DOCUMENT</Text><Text style={styles.documentHeaderTitle}>Academic certificate</Text></View><TouchableOpacity style={styles.closeRoundButton} onPress={onClose}><Ionicons name="close" size={22} color="#0f172a" /></TouchableOpacity></View>
+        <Text style={styles.documentHeaderFile} numberOfLines={1}>{tutor.qualificationFileName}</Text>
+        <View style={styles.webViewWrap}>
+          <WebView source={{ uri: documentUrl, headers: token ? { Authorization: `Bearer ${token}` } : {} }} startInLoadingState renderLoading={() => <View style={styles.documentLoading}><Ionicons name="document-text-outline" size={28} color="#0f766e" /><Text style={styles.documentLoadingText}>Opening secure document…</Text></View>} />
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -464,7 +612,7 @@ function ActionMetric({ icon, label, value, tone }) {
   );
 }
 
-function ReviewCard({ name, email, subjects, qualification, request, onApprove, onReject }) {
+function ReviewCard({ name, email, subjects, qualification, request, onApprove, onReject, onViewDocument }) {
   return (
     <View style={styles.reviewCard}>
       <View style={styles.reviewTop}>
@@ -485,6 +633,12 @@ function ReviewCard({ name, email, subjects, qualification, request, onApprove, 
       </View>
 
       <View style={styles.reviewActions}>
+        {!!request.qualificationFileName && (
+          <TouchableOpacity style={styles.viewDocumentButton} onPress={onViewDocument} activeOpacity={0.86}>
+            <Ionicons name="eye-outline" size={18} color="#0f766e" />
+            <Text style={styles.viewDocumentButtonText}>View document</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={styles.rejectButton} onPress={onReject} activeOpacity={0.86}>
           <Ionicons name="close-outline" size={18} color="#991b1b" />
           <Text style={styles.rejectButtonText}>Reject</Text>
@@ -825,7 +979,7 @@ const styles = StyleSheet.create({
   reviewDetailCopy: { flex: 1 },
   reviewDetailLabel: { color: "#64748b", fontSize: 10, fontWeight: "900", textTransform: "uppercase", letterSpacing: 0.7 },
   reviewDetailValue: { color: "#020617", fontSize: 13, lineHeight: 18, fontWeight: "800", marginTop: 2 },
-  reviewActions: { flexDirection: "row", gap: 10 },
+  reviewActions: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   rejectButton: {
     flex: 1,
     minHeight: 46,
@@ -991,4 +1145,55 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   resultCancelText: { color: "#020617", fontSize: 14, fontWeight: "900" },
+  directoryButton: { minHeight: 48, borderRadius: 14, backgroundColor: "#0f172a", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, marginTop: 4 },
+  directoryButtonText: { color: "#fff", fontSize: 13, fontWeight: "900" },
+  directoryScreen: { flex: 1, backgroundColor: "#f8fafc", paddingTop: 58 },
+  directoryHeader: { backgroundColor: "#fff", paddingHorizontal: 20, paddingBottom: 18, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", borderBottomWidth: 1, borderColor: "#e2e8f0" },
+  directoryEyebrow: { color: "#0f766e", fontSize: 10, letterSpacing: 1.5, fontWeight: "900" },
+  directoryTitle: { color: "#0f172a", fontSize: 25, fontWeight: "900", marginTop: 3 },
+  directorySubtitle: { color: "#64748b", fontSize: 12, fontWeight: "700", marginTop: 4 },
+  closeRoundButton: { width: 42, height: 42, borderRadius: 14, backgroundColor: "#f1f5f9", alignItems: "center", justifyContent: "center" },
+  filterRow: { flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: "#fff" },
+  filterChip: { flex: 1, minHeight: 35, borderRadius: 11, backgroundColor: "#f1f5f9", alignItems: "center", justifyContent: "center", paddingHorizontal: 5 },
+  filterChipActive: { backgroundColor: "#0f766e" },
+  filterChipText: { color: "#475569", fontSize: 10, fontWeight: "900" },
+  filterChipTextActive: { color: "#fff" },
+  directoryList: { padding: 16, paddingBottom: 32, gap: 10 },
+  userRow: { flexDirection: "row", alignItems: "center", gap: 11, padding: 13, borderRadius: 18, borderWidth: 1, borderColor: "#e2e8f0", backgroundColor: "#fff", shadowColor: "#0f172a", shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 },
+  userAvatar: { width: 44, height: 44, borderRadius: 15, backgroundColor: "#ccfbf1", alignItems: "center", justifyContent: "center" },
+  userAvatarText: { color: "#0f766e", fontSize: 17, fontWeight: "900" },
+  userCopy: { flex: 1, minWidth: 0 },
+  userName: { color: "#0f172a", fontSize: 14, fontWeight: "900" },
+  userEmail: { color: "#64748b", fontSize: 11, fontWeight: "700", marginTop: 2 },
+  userDetail: { color: "#0f766e", fontSize: 10, fontWeight: "800", marginTop: 3 },
+  userRowEnd: { alignItems: "flex-end", gap: 6 },
+  profileModal: { width: "100%", maxHeight: "88%", borderRadius: 28, backgroundColor: "#fff", overflow: "hidden" },
+  profileClose: { position: "absolute", right: 16, top: 15, zIndex: 2, width: 38, height: 38, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.9)", alignItems: "center", justifyContent: "center" },
+  profileHero: { backgroundColor: "#0f172a", alignItems: "center", paddingHorizontal: 28, paddingTop: 28, paddingBottom: 24 },
+  profileAvatar: { width: 70, height: 70, borderRadius: 24, backgroundColor: "#2dd4bf", alignItems: "center", justifyContent: "center", marginBottom: 11 },
+  profileAvatarText: { color: "#042f2e", fontSize: 29, fontWeight: "900" },
+  profileRole: { color: "#99f6e4", fontSize: 10, fontWeight: "900", letterSpacing: 1.4 },
+  profileName: { color: "#fff", fontSize: 23, fontWeight: "900", textAlign: "center", marginTop: 3 },
+  profileEmail: { color: "#cbd5e1", fontSize: 12, fontWeight: "700", marginTop: 4, marginBottom: 12 },
+  profileScroll: { padding: 20, paddingBottom: 28 },
+  profileSectionLabel: { color: "#0f766e", fontSize: 10, fontWeight: "900", letterSpacing: 1.3, marginBottom: 8 },
+  profileField: { borderBottomWidth: 1, borderColor: "#e2e8f0", paddingVertical: 11 },
+  profileFieldLabel: { color: "#64748b", fontSize: 10, fontWeight: "900", textTransform: "uppercase", letterSpacing: 0.6 },
+  profileFieldValue: { color: "#0f172a", fontSize: 14, fontWeight: "800", marginTop: 4, lineHeight: 19 },
+  documentCard: { marginTop: 20, padding: 14, borderRadius: 18, backgroundColor: "#f0fdfa", borderWidth: 1, borderColor: "#99f6e4", flexDirection: "row", alignItems: "center", gap: 10 },
+  documentIcon: { width: 42, height: 42, borderRadius: 13, backgroundColor: "#ccfbf1", alignItems: "center", justifyContent: "center" },
+  documentCopy: { flex: 1, minWidth: 0 },
+  documentTitle: { color: "#0f172a", fontSize: 12, fontWeight: "900" },
+  documentName: { color: "#64748b", fontSize: 10, fontWeight: "700", marginTop: 3 },
+  documentButton: { minHeight: 36, borderRadius: 11, paddingHorizontal: 10, backgroundColor: "#0f766e", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4 },
+  documentButtonText: { color: "#fff", fontSize: 11, fontWeight: "900" },
+  documentScreen: { flex: 1, backgroundColor: "#f8fafc", paddingTop: 56 },
+  documentHeader: { backgroundColor: "#fff", paddingHorizontal: 18, paddingBottom: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  documentHeaderTitle: { color: "#0f172a", fontSize: 20, fontWeight: "900", marginTop: 3 },
+  documentHeaderFile: { color: "#64748b", backgroundColor: "#fff", paddingHorizontal: 18, paddingBottom: 14, fontSize: 11, fontWeight: "700" },
+  webViewWrap: { flex: 1, margin: 12, borderRadius: 16, overflow: "hidden", backgroundColor: "#fff", borderWidth: 1, borderColor: "#e2e8f0" },
+  documentLoading: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 9, backgroundColor: "#fff", zIndex: 1 },
+  documentLoadingText: { color: "#475569", fontSize: 13, fontWeight: "800" },
+  viewDocumentButton: { width: "100%", minHeight: 44, borderRadius: 14, backgroundColor: "#f0fdfa", borderWidth: 1, borderColor: "#99f6e4", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7 },
+  viewDocumentButtonText: { color: "#0f766e", fontSize: 13, fontWeight: "900" },
 });

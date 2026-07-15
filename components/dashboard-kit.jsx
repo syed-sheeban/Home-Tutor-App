@@ -2,7 +2,7 @@ import { FlatList, Modal, RefreshControl, StyleSheet, Text, TouchableOpacity, Vi
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInUp } from "react-native-reanimated";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { NotificationBell } from "./notification-bell";
 
 const C = {
@@ -31,10 +31,17 @@ const C = {
   roseText: "#be123c",
 };
 
-export function DashboardShell({ title, subtitle, icon, children, refreshing, onRefresh, onLogout }) {
+export function DashboardShell({ title, subtitle, icon, children, refreshing, onRefresh, onLogout, navigation = [] }) {
   const sections = Array.isArray(children) ? children.filter(Boolean) : [children].filter(Boolean);
   const [logoutPrompt, setLogoutPrompt] = useState(false);
   const [logoutDone, setLogoutDone] = useState(false);
+  const [navigationOpen, setNavigationOpen] = useState(false);
+  const listRef = useRef(null);
+
+  const navigateTo = (index) => {
+    setNavigationOpen(false);
+    listRef.current?.scrollToIndex({ index: Math.max(0, index || 0), animated: true, viewPosition: 0.06 });
+  };
 
   const confirmLogout = async () => {
     setLogoutPrompt(false);
@@ -56,6 +63,11 @@ export function DashboardShell({ title, subtitle, icon, children, refreshing, on
         </View>
         <View style={styles.brandActions}>
           <NotificationBell compact />
+          {!!navigation.length && (
+            <TouchableOpacity style={styles.logoutButton} onPress={() => setNavigationOpen(true)} activeOpacity={0.82} accessibilityLabel="Open dashboard menu">
+              <Ionicons name="menu-outline" size={21} color={C.white70} />
+            </TouchableOpacity>
+          )}
           {!!onLogout && (
             <TouchableOpacity style={styles.logoutButton} onPress={() => setLogoutPrompt(true)} activeOpacity={0.82}>
               <Ionicons name="log-out-outline" size={19} color={C.white70} />
@@ -65,6 +77,7 @@ export function DashboardShell({ title, subtitle, icon, children, refreshing, on
       </View>
 
       <FlatList
+        ref={listRef}
         data={sections}
         keyExtractor={(_, index) => `section-${index}`}
         renderItem={({ item, index }) => (
@@ -78,7 +91,31 @@ export function DashboardShell({ title, subtitle, icon, children, refreshing, on
         refreshControl={
           onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={C.primary} /> : undefined
         }
+        onScrollToIndexFailed={({ averageItemLength, index }) => {
+          listRef.current?.scrollToOffset({ offset: Math.max(0, averageItemLength * index), animated: true });
+        }}
       />
+      <Modal visible={navigationOpen} transparent animationType="fade" onRequestClose={() => setNavigationOpen(false)}>
+        <View style={styles.navigationBackdrop}>
+          <View style={styles.navigationDrawer}>
+            <View style={styles.navigationBrand}>
+              <View style={styles.navigationBrandIcon}><Ionicons name={icon || "school-outline"} size={21} color={C.white} /></View>
+              <View style={styles.navigationBrandCopy}><Text style={styles.navigationBrandName}>HomeTutor</Text><Text style={styles.navigationBrandRole}>{title}</Text></View>
+              <TouchableOpacity style={styles.navigationClose} onPress={() => setNavigationOpen(false)}><Ionicons name="close" size={21} color={C.white} /></TouchableOpacity>
+            </View>
+            <Text style={styles.navigationLabel}>WORKSPACE</Text>
+            {navigation.map((item) => (
+              <TouchableOpacity key={item.label} style={styles.navigationItem} onPress={() => navigateTo(item.index)} activeOpacity={0.84}>
+                <View style={styles.navigationItemIcon}><Ionicons name={item.icon || "grid-outline"} size={18} color={C.primary} /></View>
+                <View style={styles.navigationItemCopy}><Text style={styles.navigationItemTitle}>{item.label}</Text>{!!item.description && <Text style={styles.navigationItemText}>{item.description}</Text>}</View>
+                <Ionicons name="chevron-forward" size={17} color={C.white50} />
+              </TouchableOpacity>
+            ))}
+            <View style={styles.navigationFoot}><Ionicons name="shield-checkmark-outline" size={17} color="#99f6e4" /><Text style={styles.navigationFootText}>Private dashboard access</Text></View>
+          </View>
+          <TouchableOpacity style={styles.navigationDismiss} onPress={() => setNavigationOpen(false)} activeOpacity={1} />
+        </View>
+      </Modal>
       <Modal visible={logoutPrompt} transparent animationType="fade" onRequestClose={() => setLogoutPrompt(false)}>
         <View style={styles.modalBackdrop}>
           <View style={styles.logoutCard}>
@@ -256,7 +293,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 18,
     paddingVertical: 14,
-    backgroundColor: C.bg,
+    backgroundColor: "#071d28",
     borderBottomWidth: 0,
   },
   brandLeft: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
@@ -276,7 +313,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 8,
-    backgroundColor: C.white07,
+    backgroundColor: "rgba(255,255,255,0.10)",
     borderWidth: 1,
     borderColor: C.white10,
     alignItems: "center",
@@ -286,11 +323,11 @@ const styles = StyleSheet.create({
   hero: {
     overflow: "hidden",
     borderRadius: 8,
-    backgroundColor: "#0f172a",
+    backgroundColor: "#063b43",
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#1e293b",
+    borderColor: "#0f5e67",
     shadowColor: "#000",
     shadowOpacity: 0.18,
     shadowRadius: 24,
@@ -314,7 +351,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 8,
-    backgroundColor: C.primary,
+    backgroundColor: "#d9b65d",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -325,7 +362,7 @@ const styles = StyleSheet.create({
     height: 4,
     width: 86,
     borderRadius: 8,
-    backgroundColor: C.primary,
+    backgroundColor: "#d9b65d",
     marginTop: 18,
   },
   statGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 16 },
@@ -363,7 +400,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 3,
-    backgroundColor: C.primary,
+    backgroundColor: "#d9b65d",
   },
   sectionHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 12 },
   sectionTitleWrap: { flex: 1 },
@@ -464,4 +501,21 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   logoutSecondaryText: { color: C.slate950, fontSize: 14, fontWeight: "900" },
+  navigationBackdrop: { flex: 1, flexDirection: "row", backgroundColor: "rgba(2,6,23,0.62)" },
+  navigationDrawer: { width: "82%", maxWidth: 350, height: "100%", backgroundColor: "#062b35", paddingTop: 52, paddingHorizontal: 16, paddingBottom: 22 },
+  navigationDismiss: { flex: 1 },
+  navigationBrand: { flexDirection: "row", alignItems: "center", gap: 10, paddingBottom: 24, borderBottomWidth: 1, borderColor: "rgba(255,255,255,0.12)" },
+  navigationBrandIcon: { width: 42, height: 42, borderRadius: 14, backgroundColor: "#d9b65d", alignItems: "center", justifyContent: "center" },
+  navigationBrandCopy: { flex: 1 },
+  navigationBrandName: { color: C.white, fontSize: 17, fontWeight: "900" },
+  navigationBrandRole: { color: C.white70, fontSize: 11, fontWeight: "800", marginTop: 2 },
+  navigationClose: { width: 38, height: 38, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.08)" },
+  navigationLabel: { color: "#99f6e4", fontSize: 10, fontWeight: "900", letterSpacing: 1.5, marginTop: 22, marginBottom: 10 },
+  navigationItem: { flexDirection: "row", alignItems: "center", gap: 11, padding: 12, borderRadius: 15, marginBottom: 7, backgroundColor: "rgba(255,255,255,0.055)", borderWidth: 1, borderColor: "rgba(255,255,255,0.07)" },
+  navigationItemIcon: { width: 36, height: 36, borderRadius: 11, backgroundColor: "rgba(20,184,166,0.15)", alignItems: "center", justifyContent: "center" },
+  navigationItemCopy: { flex: 1 },
+  navigationItemTitle: { color: C.white, fontSize: 13, fontWeight: "900" },
+  navigationItemText: { color: C.white50, fontSize: 10, fontWeight: "700", marginTop: 2 },
+  navigationFoot: { marginTop: "auto", flexDirection: "row", alignItems: "center", gap: 7, padding: 12, borderRadius: 14, backgroundColor: "rgba(20,184,166,0.12)" },
+  navigationFootText: { color: "#ccfbf1", fontSize: 11, fontWeight: "800" },
 });
