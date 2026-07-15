@@ -3,6 +3,7 @@ import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "reac
 import useAuthStore from "../../store/authStore";
 import { tutorService } from "../../services/tutorService";
 import { shouldRefreshDashboard, subscribeToDashboardUpdates } from "../../services/dashboardRealtime";
+import { getDashboardCache, setDashboardCache } from "../../services/dashboardCache";
 import PremiumFeedbackModal from "../../components/premium-feedback-modal";
 import {
   DashboardShell,
@@ -23,8 +24,8 @@ function addOneHour(value) {
 
 export default function TutorDashboard({ section = "overview" }) {
   const logout = useAuthStore((s) => s.logout);
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(() => getDashboardCache("tutor"));
+  const [loading, setLoading] = useState(() => !getDashboardCache("tutor"));
   const [refreshing, setRefreshing] = useState(false);
   const [editor, setEditor] = useState(null);
   const [feedback, setFeedback] = useState(null);
@@ -34,6 +35,7 @@ export default function TutorDashboard({ section = "overview" }) {
     try {
       const response = await tutorService.getTutorDashboard();
       setData(response);
+      setDashboardCache("tutor", response);
     } catch (error) {
       setFeedback({ type: "error", title: "Tutor Dashboard", message: error?.response?.data?.message || "Could not load tutor dashboard." });
     } finally {

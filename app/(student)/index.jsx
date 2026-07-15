@@ -3,6 +3,7 @@ import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "reac
 import useAuthStore from "../../store/authStore";
 import { studentService } from "../../services/studentService";
 import { shouldRefreshDashboard, subscribeToDashboardUpdates } from "../../services/dashboardRealtime";
+import { getDashboardCache, setDashboardCache } from "../../services/dashboardCache";
 import PremiumFeedbackModal from "../../components/premium-feedback-modal";
 import {
   DashboardShell,
@@ -17,8 +18,8 @@ const EMPTY = [];
 
 export default function StudentDashboard({ section = "overview" }) {
   const logout = useAuthStore((s) => s.logout);
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(() => getDashboardCache("student"));
+  const [loading, setLoading] = useState(() => !getDashboardCache("student"));
   const [refreshing, setRefreshing] = useState(false);
   const [actionModal, setActionModal] = useState(null);
   const [feedback, setFeedback] = useState(null);
@@ -27,6 +28,7 @@ export default function StudentDashboard({ section = "overview" }) {
     try {
       const response = await studentService.getStudentDashboard();
       setData(response);
+      setDashboardCache("student", response);
     } catch (error) {
       setFeedback({ type: "error", title: "Student Dashboard", message: error?.response?.data?.message || "Could not load your dashboard." });
     } finally {

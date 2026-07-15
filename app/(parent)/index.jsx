@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import useAuthStore from "../../store/authStore";
 import { parentService } from "../../services/parentService";
 import { shouldRefreshDashboard, subscribeToDashboardUpdates } from "../../services/dashboardRealtime";
+import { getDashboardCache, setDashboardCache } from "../../services/dashboardCache";
 import PremiumFeedbackModal from "../../components/premium-feedback-modal";
 import {
   DashboardShell,
@@ -17,9 +18,10 @@ const EMPTY = [];
 
 export default function ParentDashboard({ section = "overview" }) {
   const logout = useAuthStore((s) => s.logout);
-  const [data, setData] = useState(null);
-  const [tutors, setTutors] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedParent = getDashboardCache("parent");
+  const [data, setData] = useState(() => cachedParent?.data || null);
+  const [tutors, setTutors] = useState(() => cachedParent?.tutors || []);
+  const [loading, setLoading] = useState(() => !cachedParent);
   const [refreshing, setRefreshing] = useState(false);
   const [feedback, setFeedback] = useState(null);
 
@@ -30,6 +32,7 @@ export default function ParentDashboard({ section = "overview" }) {
         parentService.getParentTutors(),
       ]);
       setData(dashboardData);
+      setDashboardCache("parent", { data: dashboardData, tutors: Array.isArray(tutorData) ? tutorData : [] });
       setTutors(Array.isArray(tutorData) ? tutorData : []);
     } catch (error) {
       setFeedback({ type: "error", title: "Parent Dashboard", message: error?.response?.data?.message || "Could not load parent dashboard." });

@@ -4,6 +4,7 @@ import { WebView } from "react-native-webview";
 import useAuthStore from "../../store/authStore";
 import { adminService } from "../../services/adminService";
 import { API_BASE_URL } from "../../services/api";
+import { getDashboardCache, setDashboardCache } from "../../services/dashboardCache";
 import {
   Badge,
   DashboardShell,
@@ -18,12 +19,13 @@ import { Ionicons } from "@expo/vector-icons";
 
 export default function AdminDashboard({ section = "overview" }) {
   const logout = useAuthStore((s) => s.logout);
-  const [requests, setRequests] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [stats, setStats] = useState({});
-  const [reviews, setReviews] = useState([]);
-  const [notifications, setNotifications] = useState([]);
-  const [notificationStats, setNotificationStats] = useState({});
+  const cachedAdmin = getDashboardCache("admin");
+  const [requests, setRequests] = useState(() => cachedAdmin?.requests || []);
+  const [users, setUsers] = useState(() => cachedAdmin?.users || []);
+  const [stats, setStats] = useState(() => cachedAdmin?.stats || {});
+  const [reviews, setReviews] = useState(() => cachedAdmin?.reviews || []);
+  const [notifications, setNotifications] = useState(() => cachedAdmin?.notifications || []);
+  const [notificationStats, setNotificationStats] = useState(() => cachedAdmin?.notificationStats || {});
   const [notificationForm, setNotificationForm] = useState({
     title: "",
     message: "",
@@ -34,7 +36,7 @@ export default function AdminDashboard({ section = "overview" }) {
     scheduledAt: "",
   });
   const [notificationBusy, setNotificationBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !cachedAdmin);
   const [refreshing, setRefreshing] = useState(false);
   const [reviewModal, setReviewModal] = useState(null);
   const [resultModal, setResultModal] = useState(null);
@@ -60,6 +62,10 @@ export default function AdminDashboard({ section = "overview" }) {
       setReviews(Array.isArray(reviewData) ? reviewData : []);
       setNotifications(notificationData?.notifications || []);
       setNotificationStats(notificationData?.stats || {});
+      setDashboardCache("admin", {
+        requests: Array.isArray(requestData) ? requestData : [], stats: statsData || {}, users: Array.isArray(userData) ? userData : [],
+        reviews: Array.isArray(reviewData) ? reviewData : [], notifications: notificationData?.notifications || [], notificationStats: notificationData?.stats || {},
+      });
     } catch (error) {
       setResultModal({ type: "error", title: "Admin Dashboard", message: error?.response?.data?.message || "Could not load admin dashboard." });
     } finally {
