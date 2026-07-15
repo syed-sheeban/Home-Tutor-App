@@ -1,4 +1,4 @@
-import { FlatList, Modal, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -32,10 +32,8 @@ const C = {
   roseText: "#be123c",
 };
 
-export function DashboardShell({ title, subtitle, icon, children, refreshing, onRefresh, onLogout, navigation = [], activeNavigationIndex: initialNavigationIndex = 0 }) {
+export function DashboardShell({ title, subtitle, icon, children, refreshing, onRefresh, navigation = [], activeNavigationIndex: initialNavigationIndex = 0 }) {
   const sections = Array.isArray(children) ? children.filter(Boolean) : [children].filter(Boolean);
-  const [logoutPrompt, setLogoutPrompt] = useState(false);
-  const [logoutDone, setLogoutDone] = useState(false);
   const [activeNavigationIndex, setActiveNavigationIndex] = useState(initialNavigationIndex);
   const listRef = useRef(null);
   const router = useRouter();
@@ -47,12 +45,6 @@ export function DashboardShell({ title, subtitle, icon, children, refreshing, on
       return;
     }
     listRef.current?.scrollToIndex({ index: Math.max(0, item.index || 0), animated: true, viewPosition: 0.06 });
-  };
-
-  const confirmLogout = async () => {
-    setLogoutPrompt(false);
-    await onLogout?.();
-    setLogoutDone(true);
   };
 
   return (
@@ -69,11 +61,9 @@ export function DashboardShell({ title, subtitle, icon, children, refreshing, on
         </View>
         <View style={styles.brandActions}>
           <NotificationBell compact />
-          {!!onLogout && (
-            <TouchableOpacity style={styles.logoutButton} onPress={() => setLogoutPrompt(true)} activeOpacity={0.82}>
-              <Ionicons name="log-out-outline" size={19} color={C.white70} />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity style={styles.logoutButton} onPress={() => router.replace("/(tabs)/home")} activeOpacity={0.82} accessibilityLabel="Go to home">
+            <Ionicons name="home-outline" size={19} color={C.white70} />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -109,37 +99,6 @@ export function DashboardShell({ title, subtitle, icon, children, refreshing, on
           listRef.current?.scrollToOffset({ offset: Math.max(0, averageItemLength * index), animated: true });
         }}
       />
-      <Modal visible={logoutPrompt} transparent animationType="fade" onRequestClose={() => setLogoutPrompt(false)}>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.logoutCard}>
-            <View style={styles.logoutIcon}>
-              <Ionicons name="shield-checkmark-outline" size={32} color={C.primary} />
-            </View>
-            <Text style={styles.logoutTitle}>Sign out securely?</Text>
-            <Text style={styles.logoutText}>Your dashboard session will close on this device.</Text>
-            <TouchableOpacity style={styles.logoutPrimary} onPress={confirmLogout} activeOpacity={0.86}>
-              <Text style={styles.logoutPrimaryText}>Sign Out</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.logoutSecondary} onPress={() => setLogoutPrompt(false)} activeOpacity={0.86}>
-              <Text style={styles.logoutSecondaryText}>Stay Signed In</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-      <Modal visible={logoutDone} transparent animationType="fade" onRequestClose={() => setLogoutDone(false)}>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.logoutCard}>
-            <View style={styles.logoutIcon}>
-              <Ionicons name="checkmark-circle-outline" size={34} color={C.primary} />
-            </View>
-            <Text style={styles.logoutTitle}>Signed out</Text>
-            <Text style={styles.logoutText}>You can sign in again whenever you need your dashboard.</Text>
-            <TouchableOpacity style={styles.logoutPrimary} onPress={() => setLogoutDone(false)} activeOpacity={0.86}>
-              <Text style={styles.logoutPrimaryText}>Done</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -452,48 +411,6 @@ const styles = StyleSheet.create({
   skeletonHero: { height: 160, borderRadius: 8, backgroundColor: C.white07 },
   skeletonLine: { height: 74, borderRadius: 8, backgroundColor: C.white07 },
   skeletonText: { color: C.white50, textAlign: "center", fontSize: 13, fontWeight: "800", marginTop: 4 },
-  modalBackdrop: { flex: 1, backgroundColor: "rgba(2,6,23,0.70)", justifyContent: "center", padding: 22 },
-  logoutCard: {
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: C.slate200,
-    backgroundColor: C.white,
-    padding: 22,
-    alignItems: "center",
-  },
-  logoutIcon: {
-    width: 68,
-    height: 68,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#99f6e4",
-    backgroundColor: "#ecfdf5",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoutTitle: { color: C.slate950, fontSize: 23, lineHeight: 28, fontWeight: "900", textAlign: "center", marginTop: 16 },
-  logoutText: { color: C.slate500, fontSize: 14, lineHeight: 22, fontWeight: "700", textAlign: "center", marginTop: 8 },
-  logoutPrimary: {
-    width: "100%",
-    minHeight: 48,
-    borderRadius: 8,
-    backgroundColor: C.slate950,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 22,
-  },
-  logoutPrimaryText: { color: C.white, fontSize: 14, fontWeight: "900" },
-  logoutSecondary: {
-    width: "100%",
-    minHeight: 48,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: C.slate200,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 10,
-  },
-  logoutSecondaryText: { color: C.slate950, fontSize: 14, fontWeight: "900" },
   portalNavWrap: { marginTop: -9, marginBottom: 16, backgroundColor: C.white, borderRadius: 16, borderWidth: 1, borderColor: C.slate200, shadowColor: "#0f172a", shadowOpacity: 0.07, shadowRadius: 12, elevation: 2 },
   portalNav: { paddingHorizontal: 8, paddingVertical: 8, gap: 6 },
   portalNavItem: { minHeight: 34, flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, borderRadius: 10, backgroundColor: "#f8fafc" },
