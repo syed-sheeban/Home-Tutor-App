@@ -1,11 +1,16 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import * as SplashScreen from "expo-splash-screen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import useAuthStore from "../store/authStore";
 import { Colors } from "../constants/Colors";
+import LaunchScreen from "../components/launch-screen";
+
+SplashScreen.preventAutoHideAsync();
+SplashScreen.setOptions({ duration: 400, fade: true });
 
 function RouteController() {
   const router = useRouter();
@@ -62,10 +67,19 @@ function RouteController() {
 }
 
 export default function RootLayout() {
+  const [showLaunchScreen, setShowLaunchScreen] = useState(true);
+
+  useEffect(() => {
+    SplashScreen.hide();
+  }, []);
+
+  const finishLaunch = useCallback(() => setShowLaunchScreen(false), []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <RouteController />
+        {showLaunchScreen && <LaunchScreen onFinished={finishLaunch} />}
         <StatusBar style="dark" backgroundColor={Colors.background} />
       </SafeAreaProvider>
     </GestureHandlerRootView>
