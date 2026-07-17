@@ -18,7 +18,6 @@
     "android": {
       "package": "com.hometutor.apk",
       "versionCode": 3,
-      "usesCleartextTraffic": true,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
