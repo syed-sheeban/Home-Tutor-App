@@ -1,32 +1,17 @@
 import Constants from "expo-constants";
-import { Platform } from "react-native";
+
+const LIVE_WEB_APP_BASE_URL = "https://backend-production-a779f.up.railway.app";
 
 const normalizeOrigin = (value) => String(value || "").trim().replace(/\/+$/, "");
-
-const getExpoHost = () => {
-  const hostUri =
-    Constants.expoConfig?.hostUri ||
-    Constants.manifest2?.extra?.expoClient?.hostUri ||
-    Constants.manifest?.debuggerHost;
-
-  return String(hostUri || "").split(":")[0];
-};
 
 export const WEB_APP_BASE_URL = (() => {
   const envUrl = process.env.EXPO_PUBLIC_WEB_APP_BASE_URL;
   if (envUrl) return normalizeOrigin(envUrl);
 
-  const expoHost = getExpoHost();
-  if (expoHost && !["localhost", "127.0.0.1"].includes(expoHost)) {
-    return `http://${expoHost}:5173`;
-  }
-
   const configuredUrl = Constants.expoConfig?.extra?.webAppBaseUrl;
   if (configuredUrl) return normalizeOrigin(configuredUrl);
 
-  if (Platform.OS === "android") return "http://10.0.2.2:5173";
-
-  return "http://localhost:5173";
+  return LIVE_WEB_APP_BASE_URL;
 })();
 
 export const buildAuthUrl = ({ mode, role = "student", sessionReset }) =>

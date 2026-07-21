@@ -158,7 +158,6 @@ export default function DiscoverScreen() {
         tutorId: tutor.id || tutor._id,
         subject: firstSubject || "General",
         time: "",
-        fee: "",
       });
       setFeedbackModal({
         type: "success",

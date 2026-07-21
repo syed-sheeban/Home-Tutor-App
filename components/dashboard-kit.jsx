@@ -229,9 +229,9 @@ export function SkeletonDashboard({ label = "Loading dashboard..." }) {
 
 export function getStatusTone(status) {
   const normalized = String(status || "").toUpperCase();
-  if (["APPROVED", "ACCEPTED", "ACTIVE", "VERIFIED"].includes(normalized)) return "success";
-  if (["REJECTED", "FAILED", "BLOCKED"].includes(normalized)) return "danger";
-  if (["PENDING", "REVIEW", "UNDER REVIEW"].includes(normalized)) return "warning";
+  if (["APPROVED", "ACCEPTED", "ACTIVE", "VERIFIED", "PAID", "COMPLETED"].includes(normalized)) return "success";
+  if (["REJECTED", "FAILED", "BLOCKED", "CANCELLED"].includes(normalized)) return "danger";
+  if (["PENDING", "REVIEW", "UNDER REVIEW", "CREATED", "ATTEMPTED", "PENDING_PAYMENT"].includes(normalized)) return "warning";
   return "neutral";
 }
 

@@ -5,6 +5,7 @@ import { studentService } from "../../services/studentService";
 import { shouldRefreshDashboard, subscribeToDashboardUpdates } from "../../services/dashboardRealtime";
 import { getDashboardCache, setDashboardCache } from "../../services/dashboardCache";
 import PremiumFeedbackModal from "../../components/premium-feedback-modal";
+import StudentPayments from "../../components/student-payments";
 import {
   DashboardShell,
   EmptyState,
@@ -113,16 +114,19 @@ export default function StudentDashboard({ section = "overview" }) {
         refreshing={refreshing}
         onRefresh={onRefresh}
         onLogout={logout}
-        activeNavigationIndex={["overview", "schedule", "tutors", "progress", "reviews"].indexOf(section)}
+        activeNavigationIndex={["overview", "schedule", "tutors", "payments", "progress", "reviews"].indexOf(section)}
         navigation={[
           { label: "Overview", icon: "grid-outline", href: "/(student)" },
           { label: "Schedule", icon: "calendar-outline", href: "/(student)/schedule" },
           { label: "Tutors", icon: "people-outline", href: "/(student)/tutors" },
+          { label: "Payments", icon: "card-outline", href: "/(student)/payments" },
           { label: "Progress", icon: "trending-up-outline", href: "/(student)/progress" },
           { label: "Reviews", icon: "star-outline", href: "/(student)/reviews" },
         ]}
       >
         {section === "overview" && <StatGrid stats={statItems} />}
+
+      {section === "payments" && <StudentPayments bookings={student?.bookings || EMPTY} onChanged={loadDashboard} />}
 
       {section === "overview" && <SectionCard title="Next Class" eyebrow="Focus" icon="calendar-number-outline">
         {nextClass ? (

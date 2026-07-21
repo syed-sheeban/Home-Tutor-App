@@ -3,6 +3,7 @@ import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View 
 import { WebView } from "react-native-webview";
 import useAuthStore from "../../store/authStore";
 import { adminService } from "../../services/adminService";
+import AdminFinance from "../../components/admin-finance";
 import { API_BASE_URL } from "../../services/api";
 import { getDashboardCache, setDashboardCache } from "../../services/dashboardCache";
 import {
@@ -261,16 +262,19 @@ export default function AdminDashboard({ section = "overview" }) {
       refreshing={refreshing}
       onRefresh={onRefresh}
       onLogout={logout}
-      activeNavigationIndex={["overview", "approvals", "users", "notifications", "reviews"].indexOf(section)}
+      activeNavigationIndex={["overview", "approvals", "users", "finance", "notifications", "reviews"].indexOf(section)}
       navigation={[
         { label: "Overview", icon: "grid-outline", href: "/(admin)" },
         { label: "Tutor approvals", icon: "shield-checkmark-outline", href: "/(admin)/approvals" },
         { label: "User directory", icon: "people-outline", href: "/(admin)/users" },
+        { label: "Finance", icon: "card-outline", href: "/(admin)/finance" },
         { label: "Notifications", icon: "megaphone-outline", href: "/(admin)/notifications" },
         { label: "Reviews", icon: "star-outline", href: "/(admin)/reviews" },
       ]}
     >
       {section === "overview" && <StatGrid stats={statItems} />}
+
+      {section === "finance" && <AdminFinance onChanged={loadDashboard} />}
 
       {section === "overview" && <SectionCard title="Admin Action Center" eyebrow="Needs Attention" icon="notifications-outline">
         <View style={styles.actionSummary}>
@@ -320,7 +324,7 @@ export default function AdminDashboard({ section = "overview" }) {
           />
           <SegmentedOptions
             value={notificationForm.recipientType}
-            options={["STUDENTS", "TUTORS", "PARENTS", "ALL_USERS"]}
+            options={["STUDENTS", "TUTORS", "PARENTS", "ADMINS", "ALL_USERS"]}
             onChange={(recipientType) => updateNotificationField("recipientType", recipientType)}
           />
           <SegmentedOptions

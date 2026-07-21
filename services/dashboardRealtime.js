@@ -20,5 +20,11 @@ export function subscribeToDashboardUpdates(onUpdate) {
 
 export function shouldRefreshDashboard(payload) {
   const reason = String(payload?.reason || "");
-  return reason.startsWith("schedule-") || reason === "review-saved" || reason === "progress-created";
+  return (
+    reason.startsWith("schedule-") ||
+    reason.startsWith("payment-") ||
+    reason.startsWith("withdraw-") ||
+    reason === "review-saved" ||
+    reason === "progress-created"
+  );
 }

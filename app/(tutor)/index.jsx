@@ -5,6 +5,7 @@ import { tutorService } from "../../services/tutorService";
 import { shouldRefreshDashboard, subscribeToDashboardUpdates } from "../../services/dashboardRealtime";
 import { getDashboardCache, setDashboardCache } from "../../services/dashboardCache";
 import PremiumFeedbackModal from "../../components/premium-feedback-modal";
+import TutorWallet from "../../components/tutor-wallet";
 import {
   DashboardShell,
   EmptyState,
@@ -164,17 +165,20 @@ export default function TutorDashboard({ section = "overview" }) {
       refreshing={refreshing}
       onRefresh={onRefresh}
       onLogout={logout}
-      activeNavigationIndex={["overview", "schedule", "students", "progress", "bookings", "reviews"].indexOf(section)}
+      activeNavigationIndex={["overview", "schedule", "students", "progress", "bookings", "wallet", "reviews"].indexOf(section)}
       navigation={[
         { label: "Overview", icon: "grid-outline", href: "/(tutor)" },
         { label: "Schedule", icon: "calendar-outline", href: "/(tutor)/schedule" },
         { label: "Students", icon: "people-outline", href: "/(tutor)/students" },
         { label: "Progress", icon: "trending-up-outline", href: "/(tutor)/progress" },
         { label: "Bookings", icon: "notifications-outline", href: "/(tutor)/bookings" },
+        { label: "Wallet", icon: "wallet-outline", href: "/(tutor)/wallet" },
         { label: "Reviews", icon: "star-outline", href: "/(tutor)/reviews" },
       ]}
     >
       {section === "overview" && <StatGrid stats={stats} />}
+
+      {section === "wallet" && <TutorWallet onChanged={loadDashboard} />}
 
       {section === "overview" && <SectionCard title="Verification Status" eyebrow="Profile" icon="shield-checkmark-outline">
         <ListRow
