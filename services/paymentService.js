@@ -80,6 +80,18 @@ export const adminPaymentApi = {
     return response.data;
   },
 
+  tutorCommissions: async (params = {}) => {
+    const response = await api.get("/admin/tutor-commissions", { params });
+    return response.data;
+  },
+
+  updateTutorCommission: async (tutorId, commissionPercent) => {
+    const response = await api.put(`/admin/tutors/${tutorId}/commission`, {
+      commissionPercent,
+    });
+    return response.data;
+  },
+
   approveWithdrawal: async (id, adminRemarks = "") => {
     const response = await api.put(`/admin/withdraw/${id}/approve`, {
       adminRemarks,
