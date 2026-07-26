@@ -1,0 +1,34 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="book" x1="322" y1="555" x2="702" y2="270" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#14B8A6"/>
+      <stop offset="0.52" stop-color="#0EA5E9"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="star" x1="512" y1="204" x2="512" y2="336" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FDE68A"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+    <filter id="shadow" x="204" y="148" width="616" height="574" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="28" stdDeviation="28" flood-color="#020617" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <circle cx="512" cy="424" r="246" fill="#0B1722"/>
+    <circle cx="512" cy="424" r="244" stroke="#67E8F9" stroke-opacity="0.18" stroke-width="4"/>
+    <circle cx="512" cy="424" r="208" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="2"/>
+    <path d="M512 205L530 253L578 271L530 289L512 337L494 289L446 271L494 253L512 205Z" fill="url(#star)"/>
+    <path d="M512 332C451 278 374 288 319 327V574C378 535 451 526 512 576V332Z" fill="url(#book)"/>
+    <path d="M512 332C573 278 650 288 705 327V574C646 535 573 526 512 576V332Z" fill="url(#book)" fill-opacity="0.86"/>
+    <g stroke="white" stroke-width="15" stroke-linecap="round" stroke-opacity="0.68">
+      <path d="M382 388C422 367 466 368 494 385"/>
+      <path d="M382 446C422 425 466 426 494 443"/>
+      <path d="M642 388C602 367 558 368 530 385"/>
+      <path d="M642 446C602 425 558 426 530 443"/>
+    </g>
+    <path d="M512 332V576" stroke="white" stroke-width="11" stroke-linecap="round" stroke-opacity="0.75"/>
+    <path d="M330 574C386 536 451 536 512 580C573 536 638 536 694 574" stroke="#67E8F9" stroke-width="15" stroke-linecap="round"/>
+  </g>
+  <text x="512" y="790" fill="#FFFFFF" font-family="Segoe UI, Arial, sans-serif" font-size="90" font-weight="700" text-anchor="middle">TutorNest</text>
+  <rect x="453" y="833" width="118" height="6" rx="3" fill="#F5B942"/>
+</svg>

@@ -405,7 +405,7 @@ export default function BecomeTutorScreen() {
           <Text style={styles.eyebrow}>Become A Tutor</Text>
           <Text style={styles.title}>Complete your tutor profile in one step.</Text>
           <Text style={styles.subtitle}>
-            This form submits to the existing HomeTutor verification workflow for admin approval.
+            This form submits to the existing TutorNest verification workflow for admin approval.
           </Text>
         </View>
 

@@ -80,7 +80,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <RouteController />
         {showLaunchScreen && <LaunchScreen onFinished={finishLaunch} />}
-        <StatusBar style="dark" backgroundColor={Colors.background} />
+        <StatusBar style="light" backgroundColor={Colors.background} />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

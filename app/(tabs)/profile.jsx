@@ -31,7 +31,7 @@ export default function ProfileScreen() {
   const [checkingDashboard, setCheckingDashboard] = useState(false);
   const [dashboardModal, setDashboardModal] = useState(null);
 
-  const displayName = user?.fullName || user?.name || "HomeTutor Member";
+  const displayName = user?.fullName || user?.name || "TutorNest Member";
   const displayEmail = user?.email || "No email available";
   const normalizedRole = String(role || user?.role || "").toUpperCase();
 
@@ -163,7 +163,7 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.profileInfo}>
               <Text style={styles.name}>Guest Session</Text>
-              <Text style={styles.guestSub}>Sign in to open your HomeTutor dashboard.</Text>
+              <Text style={styles.guestSub}>Sign in to open your TutorNest dashboard.</Text>
             </View>
           </View>
 
@@ -198,7 +198,7 @@ export default function ProfileScreen() {
             <View style={styles.logoutModalIcon}>
               <Ionicons name="log-out-outline" size={28} color={Colors.primary} />
             </View>
-            <Text style={styles.logoutModalTitle}>Sign out of HomeTutor?</Text>
+            <Text style={styles.logoutModalTitle}>Sign out of TutorNest?</Text>
             <Text style={styles.logoutModalText}>You will return to the homepage and can sign in again whenever you need your dashboard.</Text>
             <View style={styles.logoutActions}>
               <TouchableOpacity style={styles.logoutStayButton} onPress={() => setLogoutVisible(false)} activeOpacity={0.85}>

@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Home-tutor-apk",
+    "name": "TutorNest",
     "slug": "Home-tutor-apk",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/home-tutor-icon.png",
     "scheme": "hometutorapk",
@@ -22,7 +22,7 @@
     },
     "android": {
       "package": "com.hometutor.apk",
-      "versionCode": 3,
+      "versionCode": 4,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
@@ -35,12 +35,13 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/home-tutor-icon.png",
-          "imageWidth": 200,
+          "image": "./assets/images/tutornest-splash.png",
+          "imageWidth": 280,
           "resizeMode": "contain",
-          "backgroundColor": "#050810",
+          "backgroundColor": "#07111A",
           "dark": {
-            "backgroundColor": "#050810"
+            "image": "./assets/images/tutornest-splash.png",
+            "backgroundColor": "#07111A"
           }
         }
       ]

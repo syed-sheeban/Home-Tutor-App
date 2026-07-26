@@ -203,7 +203,7 @@ export default function HomeScreen() {
               <View style={styles.siteBrandIcon}>
                 <Ionicons name="school-outline" size={24} color="#fff" />
               </View>
-              <Text style={styles.siteBrandText}>HomeTutor</Text>
+              <Text style={styles.siteBrandText}>TutorNest</Text>
             </TouchableOpacity>
 
             <View style={styles.siteNavRight}>
@@ -474,7 +474,7 @@ export default function HomeScreen() {
             </View>
             <View>
               <Text style={styles.footerDarkCopy}>
-                Choose the path that matches what you need today. The same HomeTutor flow, routes, and account access stay in place.
+                Choose the path that matches what you need today. The same TutorNest flow, routes, and account access stay in place.
               </Text>
               <View style={styles.footerActionRow}>
                 <TouchableOpacity style={styles.footerButton} onPress={() => router.push("/(tabs)/discover")} activeOpacity={0.86}>
@@ -494,7 +494,7 @@ export default function HomeScreen() {
                 <View style={styles.footerBrandIcon}>
                   <Ionicons name="school-outline" size={25} color="#fff" />
                 </View>
-                <Text style={styles.footerBrandText}>HomeTutor</Text>
+                <Text style={styles.footerBrandText}>TutorNest</Text>
               </View>
               <Text style={styles.footerBrandCopy}>
                 Premium home tutoring and academic mentorship for students who deserve patient, personal, and expert guidance.
@@ -517,7 +517,7 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.footerBottom}>
-            <Text style={styles.footerBottomText}>Copyright 2026 HomeTutor. All rights reserved.</Text>
+            <Text style={styles.footerBottomText}>Copyright 2026 TutorNest. All rights reserved.</Text>
           </View>
         </View>
       </ScrollView>

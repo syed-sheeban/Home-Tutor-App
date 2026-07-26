@@ -55,7 +55,7 @@ export function DashboardShell({ title, subtitle, icon, children, refreshing, on
             <Ionicons name={icon || "school-outline"} size={20} color={C.white} />
           </View>
           <View style={styles.brandCopy}>
-            <Text style={styles.brandName}>HomeTutor</Text>
+            <Text style={styles.brandName}>TutorNest</Text>
             <Text style={styles.brandRole}>{title}</Text>
           </View>
         </View>
